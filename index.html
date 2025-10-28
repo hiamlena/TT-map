@@ -1,16 +1,180 @@
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Trans-Time Map</title>
-<style>
-body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:#0f1115; color:#e6eaf2; font:16px/1.5 "Inter",system-ui,-apple-system,"Segoe UI",sans-serif; }
-a { color:#e11d2e; text-decoration:none; border:1px solid #e11d2e; padding:12px 24px; border-radius:999px; transition:background .2s,color .2s; }
-a:hover, a:focus-visible { background:#e11d2e; color:#fff; }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Trans-Time — Маршрут для грузовиков</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-color: #0f1115;
+      --panel-color: #151925;
+      --input-color: #1b2030;
+      --accent-color: #e11d2e;
+      --text-color: #f0f3ff;
+      --muted-color: #a5acc7;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      padding: 24px;
+    }
+
+    main {
+      width: 100%;
+      max-width: 520px;
+      background: var(--panel-color);
+      border-radius: 24px;
+      padding: clamp(24px, 5vw, 40px);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 6vw, 40px);
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    p.subtitle {
+      margin: 0;
+      color: var(--muted-color);
+      font-size: clamp(15px, 4vw, 18px);
+      line-height: 1.6;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: var(--muted-color);
+    }
+
+    .input-row {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: var(--input-color);
+      border: 1px solid transparent;
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: var(--text-color);
+      font-size: 16px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input[type="text"]:focus-visible {
+      outline: none;
+      border-color: rgba(225, 29, 46, 0.6);
+      box-shadow: 0 0 0 4px rgba(225, 29, 46, 0.25);
+    }
+
+    button {
+      appearance: none;
+      border: none;
+      border-radius: 999px;
+      padding: 16px 24px;
+      background: var(--accent-color);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    button:hover,
+    button:focus-visible {
+      outline: none;
+      filter: brightness(1.08);
+      box-shadow: 0 14px 32px rgba(225, 29, 46, 0.35);
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    @media (max-width: 520px) {
+      main {
+        border-radius: 18px;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+  <script defer src="https://api-maps.yandex.ru/2.1/?apikey=317aa42d-aa15-4acf-885a-6d6bfddb2339&lang=ru_RU&load=SuggestView"></script>
 </head>
 <body>
-<a href="./map/">Открыть карту</a>
+  <main>
+    <header>
+      <h1>Trans-Time — Маршрут для грузовиков</h1>
+      <p class="subtitle">Маршрут для грузовиков с объездом рамок и платных дорог</p>
+    </header>
+    <section class="input-row">
+      <label for="from-input">Откуда</label>
+      <input id="from-input" type="text" name="from" placeholder="Начните вводить адрес" autocomplete="off" />
+    </section>
+    <button id="build-route" type="button">Построить</button>
+  </main>
+  <script>
+    (function () {
+      const goToMap = () => {
+        const input = document.getElementById('from-input');
+        const value = (input.value || '').trim();
+        if (!value) {
+          input.focus();
+          return;
+        }
+        const encoded = encodeURIComponent(value);
+        window.location.href = `./map/?from=${encoded}`;
+      };
+
+      const setupInteractions = () => {
+        const input = document.getElementById('from-input');
+        const button = document.getElementById('build-route');
+
+        button.addEventListener('click', goToMap);
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            goToMap();
+          }
+        });
+      };
+
+      const initSuggest = () => {
+        if (window.ymaps && typeof window.ymaps.ready === 'function') {
+          window.ymaps.ready(() => {
+            new window.ymaps.SuggestView('from-input', { results: 7 });
+          });
+        }
+      };
+
+      window.addEventListener('DOMContentLoaded', setupInteractions);
+      window.addEventListener('load', initSuggest);
+    })();
+  </script>
 </body>
 </html>
