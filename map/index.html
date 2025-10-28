@@ -5,30 +5,73 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>Trans-Time — Маршрут для грузовиков</title>
 <style>
-:root{--bg:#0f1115;--panel:#151822;--muted:#8892a6;--text:#e6eaf2;--accent:#e11d2e;--stroke:#232836;--btn:#1b2030;--btn-h:#232a3d}
-*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial}
-#app{display:grid;grid-template-rows:auto 1fr}
-header{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,var(--panel),rgba(21,24,34,.8));border-bottom:1px solid var(--stroke);backdrop-filter:blur(6px)}
-.bar{max-width:1200px;margin:8px auto;padding:8px 12px;display:grid;gap:8px;grid-template-columns:1fr 1fr minmax(120px,auto) auto}
-.row2{display:flex;gap:8px;align-items:center;grid-column:1/-1}
-.brand{font-weight:700;letter-spacing:.3px}
-.field{background:var(--btn);border:1px solid var(--stroke);border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px}
-.field input{width:100%;background:transparent;border:0;outline:0;color:var(--text);font:14px/1.2 inherit}
-.pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--stroke);background:var(--btn);padding:6px 10px;border-radius:999px;cursor:pointer;user-select:none}
-.pill input{display:none}.pill.active{background:var(--btn-h);border-color:var(--accent)}
-.btn{background:var(--accent);border:0;color:#fff;font-weight:600;padding:10px 12px;border-radius:10px;cursor:pointer}
-.btn.secondary{background:var(--btn);color:var(--text);border:1px solid var(--stroke)}
-.small{font-size:12px;color:var(--muted)}
-#map{height:100%;width:100%}
-.legend{position:absolute;left:12px;bottom:12px;z-index:4;background:rgba(21,24,34,.9);border:1px solid var(--stroke);border-radius:12px;padding:8px 10px;display:flex;gap:10px;align-items:center}
-.legend .dot{width:10px;height:10px;border-radius:50%}
-.toast{position:fixed;right:12px;bottom:12px;z-index:10;background:rgba(21,24,34,.95);border:1px solid var(--stroke);box-shadow:0 6px 22px rgba(0,0,0,.35);padding:10px 14px;border-radius:12px;display:none;gap:10px;align-items:center}
-.routeList{position:absolute;right:12px;top:90px;z-index:4;min-width:220px;max-width:300px;background:rgba(21,24,34,.95);border:1px solid var(--stroke);border-radius:12px;padding:8px;display:none}
-.routeItem{padding:8px;border-radius:10px;border:1px solid transparent;cursor:pointer}
-.routeItem:hover{background:var(--btn)}.routeItem.active{border-color:var(--accent);background:var(--btn-h)}
-@media (max-width:900px){.bar{grid-template-columns:1fr;gap:6px}.row2{flex-wrap:wrap}.routeList{top:auto;bottom:90px;right:12px}}
+:root {
+  --bg:#0f1115;
+  --panel:#151822;
+  --muted:#8892a6;
+  --text:#e6eaf2;
+  --accent:#e11d2e;
+  --stroke:#232836;
+  --btn:#1b2030;
+  --btn-h:#232a36;
+  --success:#22c55e;
+  --alt:#f59e0b;
+  --frame:#60a5fa;
+}
+* { box-sizing:border-box; }
+html,body { height:100%; margin:0; background:var(--bg); color:var(--text); font:14px/1.45 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; }
+body { display:flex; flex-direction:column; }
+#app { display:grid; grid-template-rows:auto 1fr; min-height:100vh; }
+header { position:sticky; top:0; z-index:10; background:linear-gradient(180deg,var(--panel),rgba(21,24,34,.86)); border-bottom:1px solid var(--stroke); backdrop-filter:blur(6px); }
+.bar { max-width:1200px; margin:8px auto; padding:8px 12px 12px; display:grid; gap:8px; grid-template-columns:1.1fr 1.1fr minmax(120px,auto) auto; align-items:center; }
+.brand { font-weight:700; letter-spacing:.3px; font-size:16px; }
+.small { font-size:12px; color:var(--muted); }
+.field { display:flex; gap:10px; align-items:center; padding:10px 12px; border-radius:12px; background:var(--btn); border:1px solid var(--stroke); box-shadow:inset 0 0 0 1px rgba(255,255,255,.02); }
+.field span { text-transform:uppercase; font-size:11px; letter-spacing:.08em; color:var(--muted); }
+.field input { flex:1; border:0; outline:none; font:14px/1.2 inherit; color:var(--text); background:transparent; }
+.field input::placeholder { color:rgba(230,234,242,.5); }
+.row2 { display:flex; gap:8px; align-items:center; grid-column:1/-1; flex-wrap:wrap; }
+#vehicleGroup { display:flex; gap:8px; flex-wrap:wrap; }
+.pill { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:999px; background:var(--btn); border:1px solid var(--stroke); cursor:pointer; user-select:none; transition:border-color .2s, background-color .2s, color .2s; }
+.pill input { display:none; }
+.pill.active { border-color:var(--accent); background:var(--btn-h); color:#fff; }
+.btn { border:0; border-radius:12px; padding:11px 16px; font-weight:600; cursor:pointer; transition:background .2s, transform .2s; }
+.btn.primary { background:var(--accent); color:#fff; }
+.btn.secondary { background:var(--btn); color:var(--text); border:1px solid var(--stroke); }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+.btn:not(:disabled):active { transform:translateY(1px); }
+main { position:relative; }
+#map { width:100%; height:100%; min-height:calc(100vh - 140px); background:#000; }
+.legend { position:absolute; left:16px; bottom:16px; z-index:4; background:rgba(21,24,34,.92); border:1px solid var(--stroke); border-radius:14px; padding:10px 14px; display:flex; gap:12px; align-items:center; box-shadow:0 12px 40px rgba(0,0,0,.45); }
+.legend .item { display:flex; align-items:center; gap:8px; }
+.legend .dot { width:12px; height:12px; border-radius:50%; }
+#routeList { position:absolute; right:16px; top:120px; z-index:5; min-width:240px; max-width:320px; max-height:calc(100vh - 200px); overflow-y:auto; display:none; background:rgba(21,24,34,.94); border:1px solid var(--stroke); border-radius:14px; padding:10px; box-shadow:0 18px 48px rgba(0,0,0,.45); backdrop-filter:blur(6px); }
+.routeItem { padding:10px; border-radius:12px; border:1px solid transparent; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:background .2s, border-color .2s; }
+.routeItem:hover { background:var(--btn); }
+.routeItem.active { border-color:var(--accent); background:rgba(225,29,46,.12); }
+.routeItem .title { font-weight:600; }
+.routeItem .meta { font-size:12px; color:var(--muted); }
+#toast { position:fixed; right:18px; bottom:18px; z-index:20; padding:12px 16px; border-radius:14px; border:1px solid var(--stroke); background:rgba(21,24,34,.94); box-shadow:0 18px 48px rgba(0,0,0,.45); display:flex; gap:10px; align-items:flex-start; opacity:0; pointer-events:none; transform:translateY(12px); transition:opacity .3s ease, transform .3s ease; max-width:320px; }
+#toast.show { opacity:1; pointer-events:auto; transform:translateY(0); }
+@media (max-width:1100px) {
+  .bar { grid-template-columns:1fr 1fr; }
+  #routeList { top:132px; }
+}
+@media (max-width:900px) {
+  .bar { grid-template-columns:1fr; padding:8px 10px 12px; }
+  .brand { font-size:15px; }
+  .field { width:100%; }
+  .row2 { flex-direction:column; align-items:stretch; gap:10px; }
+  #vehicleGroup { width:100%; }
+  .btnGroup { width:100%; display:flex; gap:8px; }
+  .btnGroup .btn { flex:1; }
+  #map { min-height:calc(100vh - 260px); }
+  #routeList { top:auto; right:16px; left:16px; bottom:96px; max-width:none; width:auto; }
+  #routeList::after { content:""; display:block; height:4px; }
+  #toast { left:16px; right:16px; max-width:none; }
+  .legend { left:16px; right:auto; bottom:16px; font-size:12px; }
+}
 </style>
-<!-- Яндекс.Карты 2.1 -->
 <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=317aa42d-aa15-4acf-885a-6d6bfddb2339&suggest_apikey=317aa42d-aa15-4acf-885a-6d6bfddb2339"></script>
 </head>
 <body>
@@ -36,189 +79,400 @@ header{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,var(--p
   <header>
     <div class="bar">
       <div class="brand">Trans-Time • Маршрут для грузовиков</div>
-      <div class="small">Клик по карте ➜ добавить via-точку</div>
+      <div class="small">Клик по карте → добавляет via‑точку</div>
       <div></div>
-      <div class="small" style="text-align:right">Выбирай альтернативы справа</div>
-
-      <div class="field"><span>Откуда</span><input id="from" type="text" placeholder="Адрес, город"/></div>
-      <div class="field"><span>Куда</span><input id="to" type="text" placeholder="Адрес, город"/></div>
-
+      <div class="small" style="text-align:right">Альтернативы справа или снизу</div>
+      <div class="field"><span>Откуда</span><input id="from" type="text" placeholder="Адрес, город" autocomplete="off"/></div>
+      <div class="field"><span>Куда</span><input id="to" type="text" placeholder="Адрес, город" autocomplete="off"/></div>
       <div class="row2">
-        <div id="vehicleGroup" style="display:flex;gap:8px;flex-wrap:wrap">
-          <label class="pill active"><input type="radio" name="veh" value="car" checked><span>Легковой</span></label>
-          <label class="pill"><input type="radio" name="veh" value="truck40"><span>Грузовой ≤ 40 т</span></label>
-          <label class="pill"><input type="radio" name="veh" value="truckHeavy"><span>Грузовой &gt; 40 т</span></label>
+        <div id="vehicleGroup">
+          <label class="pill active"><input type="radio" name="veh" value="car" checked>Легковой</label>
+          <label class="pill"><input type="radio" name="veh" value="truck40">Грузовой ≤ 40 т</label>
+          <label class="pill"><input type="radio" name="veh" value="truckHeavy">Грузовой &gt; 40 т</label>
         </div>
-        <div style="display:flex;gap:8px;margin-left:auto">
-          <button id="buildBtn" class="btn">Построить маршрут</button>
+        <div class="btnGroup" style="margin-left:auto; display:flex; gap:8px;">
+          <button id="buildBtn" class="btn primary">Построить маршрут</button>
           <button id="clearVia" class="btn secondary">Сбросить via-точки</button>
         </div>
       </div>
     </div>
   </header>
-
-  <div style="position:relative">
+  <main>
     <div id="map"></div>
+    <div id="routeList"></div>
     <div class="legend">
-      <div class="dot" style="background:#22c55e"></div><span class="small">Маршрут</span>
-      <div class="dot" style="background:#f59e0b"></div><span class="small">Альтернативы</span>
-      <div class="dot" style="background:#60a5fa"></div><span class="small">Весовые рамки</span>
+      <div class="item"><span class="dot" style="background:var(--success);"></span><span class="small" style="color:var(--text);">Активный маршрут</span></div>
+      <div class="item"><span class="dot" style="background:var(--alt);"></span><span class="small" style="color:var(--text);">Альтернативы</span></div>
+      <div class="item"><span class="dot" style="background:var(--frame);"></span><span class="small" style="color:var(--text);">Весовые рамки</span></div>
     </div>
-    <div id="routeList" class="routeList"></div>
-  </div>
+  </main>
 </div>
-<div id="toast" class="toast"></div>
-
+<div id="toast"></div>
 <script>
 (function(){
-  let map, multiRoute, viaPoints = [];
-  let objectManager, framePoints = [];
-  const $ = s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
-  const toastEl = $('#toast'), routeListEl = $('#routeList');
+  'use strict';
 
-  const toast=(html,ms=4500)=>{ toastEl.innerHTML=html; toastEl.style.display='flex'; clearTimeout(toastEl._t); toastEl._t=setTimeout(()=>toastEl.style.display='none',ms); };
-  const setActivePill=v=> $$('#vehicleGroup .pill').forEach(p=>p.classList.toggle('active', p.querySelector('input').value===v));
-  const getVehicle=()=> (document.querySelector('input[name="veh"]:checked')?.value)||'car';
-  const routingMode=v=> v==='car' ? 'auto' : 'truck';
-  const truckParams=v=> v==='truck40' ? {weight:40000} : (v==='truckHeavy' ? {weight:50000, axleCount:5} : null);
+  let map, multiRoute, objectManager;
+  const userViaPoints = [];
+  const userViaMarks = [];
+  let framePoints = [];
+  let pendingDetours = [];
+  let announceDetoursOnce = false;
+
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => Array.from(document.querySelectorAll(s));
+  const fromInput = $('#from');
+  const toInput = $('#to');
+  const routeListEl = $('#routeList');
+  const toastEl = $('#toast');
+
+  const notifications = (() => {
+    const queue = [];
+    let timer = null;
+    let active = false;
+    const schedule = () => {
+      if(!queue.length){
+        active = false;
+        toastEl.classList.remove('show');
+        return;
+      }
+      active = true;
+      const {html, ms} = queue.shift();
+      toastEl.innerHTML = html;
+      toastEl.classList.add('show');
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        toastEl.classList.remove('show');
+        timer = setTimeout(schedule, 220);
+      }, ms);
+    };
+    return {
+      push(html, ms = 4200){
+        queue.push({html, ms});
+        if(!active) schedule();
+      },
+      clear(){
+        queue.length = 0;
+        clearTimeout(timer);
+        timer = null;
+        active = false;
+        toastEl.classList.remove('show');
+      }
+    };
+  })();
+
+  const setActivePill = (value) => {
+    $$('#vehicleGroup .pill').forEach((pill) => {
+      const input = pill.querySelector('input');
+      pill.classList.toggle('active', input?.value === value && input.checked);
+    });
+  };
+
+  const getVehicleValue = () => document.querySelector('input[name="veh"]:checked')?.value || 'car';
+
+  const getRoutingConfig = () => {
+    const value = getVehicleValue();
+    if(value === 'car') return {mode:'auto'};
+    if(value === 'truck40') return {mode:'truck', truck:{weight:40000}};
+    return {mode:'truck', truck:{weight:50000, axleCount:5}};
+  };
+
+  const fmtDist = (m = 0) => {
+    if(!Number.isFinite(m) || m <= 0) return '—';
+    const km = m / 1000;
+    const precision = km >= 100 ? 0 : 1;
+    return km.toFixed(precision).replace('.', ',') + ' км';
+  };
+
+  const fmtTime = (s = 0) => {
+    if(!Number.isFinite(s) || s <= 0) return '—';
+    const hours = Math.floor(s / 3600);
+    const minutes = Math.round((s % 3600) / 60);
+    return hours ? `${hours} ч ${minutes} мин` : `${minutes} мин`;
+  };
+
+  const escapeHtml = (str) => String(str ?? '').replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
 
   ymaps.ready(init);
 
   function init(){
-    map = new ymaps.Map('map',{center:[55.751244,37.618423],zoom:8,controls:['zoomControl','geolocationControl','typeSelector','fullscreenControl']},{suppressMapOpenBlock:true});
-    new ymaps.SuggestView('from',{results:8,width:'auto'});
-    new ymaps.SuggestView('to',{results:8,width:'auto'});
+    map = new ymaps.Map('map', {
+      center:[55.751244,37.618423],
+      zoom:8,
+      controls:['zoomControl','geolocationControl','typeSelector','fullscreenControl']
+    }, {
+      suppressMapOpenBlock:true
+    });
 
-    $$('#vehicleGroup .pill input').forEach(r=> r.addEventListener('change',()=>{ setActivePill(r.value); if($('#from').value&&$('#to').value) buildRoute(); }));
+    new ymaps.SuggestView('from', {results:8, width:'auto'});
+    new ymaps.SuggestView('to', {results:8, width:'auto'});
 
-    map.events.add('click', e=>{
-      const c = e.get('coords');
-      if(confirm(`Добавить via-точку?\n${c[0].toFixed(6)}, ${c[1].toFixed(6)}`)){
-        viaPoints.push(c);
-        map.geoObjects.add(new ymaps.Placemark(c,{hintContent:'via-точка'},{preset:'islands#blueDotIcon'}));
-        if($('#from').value && $('#to').value) buildRoute();
+    $$('#vehicleGroup input[name="veh"]').forEach((input) => {
+      input.addEventListener('change', () => {
+        setActivePill(input.value);
+        if(fromInput.value && toInput.value) {
+          buildRoute();
+        }
+      });
+    });
+
+    map.events.add('click', (event) => {
+      const coords = event.get('coords');
+      if(!coords) return;
+      const label = `${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}`;
+      if(window.confirm(`Добавить via-точку?\n${label}`)){
+        userViaPoints.push(coords);
+        const mark = new ymaps.Placemark(coords, {hintContent:'via-точка'}, {preset:'islands#blueDotIcon'});
+        userViaMarks.push(mark);
+        map.geoObjects.add(mark);
+        if(fromInput.value && toInput.value){
+          buildRoute();
+        }
       }
     });
 
     $('#buildBtn').addEventListener('click', buildRoute);
-    $('#clearVia').addEventListener('click', ()=>{
-      viaPoints = [];
-      map.geoObjects.each(o=>{ try{ if(o?.options?.get('preset')==='islands#blueDotIcon') map.geoObjects.remove(o); }catch{} });
+
+    $('#clearVia').addEventListener('click', () => {
+      userViaPoints.length = 0;
+      while(userViaMarks.length){
+        const placemark = userViaMarks.pop();
+        if(placemark) map.geoObjects.remove(placemark);
+      }
+      notifications.push('Via-точки очищены');
       if(multiRoute) buildRoute();
     });
 
+    ['from','to'].forEach((id) => {
+      const input = $('#'+id);
+      input.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          buildRoute();
+        }
+      });
+    });
+
     loadFrames();
-    ['from','to'].forEach(id=> $('#'+id).addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); buildRoute(); }}));
   }
 
-  async function geocodeToPoint(q){
-    if(Array.isArray(q)) return q;
-    const res = await ymaps.geocode(q,{results:1});
-    const g = res.geoObjects.get(0);
-    if(!g) throw new Error('Адрес не найден: '+q);
-    return g.geometry.getCoordinates();
+  async function geocodeToPoint(query){
+    if(Array.isArray(query) && query.length === 2) return query;
+    const response = await ymaps.geocode(query, {results:1});
+    const geoObject = response.geoObjects.get(0);
+    if(!geoObject) throw new Error('Адрес не найден: ' + query);
+    return geoObject.geometry.getCoordinates();
   }
 
   async function buildRoute(){
-    const a=$('#from').value.trim(), b=$('#to').value.trim();
-    if(!a||!b){ toast('Укажи <b>Откуда</b> и <b>Куда</b>'); return; }
+    const fromValue = fromInput.value.trim();
+    const toValue = toInput.value.trim();
+    if(!fromValue || !toValue){
+      notifications.clear();
+      notifications.push('Укажи <b>Откуда</b> и <b>Куда</b>.');
+      return;
+    }
 
-    try{
-      const [A,B] = await Promise.all([geocodeToPoint(a), geocodeToPoint(b)]);
-      let ref = [A, ...viaPoints, B];
+    try {
+      notifications.clear();
+      const [start, finish] = await Promise.all([
+        geocodeToPoint(fromValue),
+        geocodeToPoint(toValue)
+      ]);
 
-      // простая эвристика объезда рамок: если ближе 100м к A/B — вставим via ~200м вбок
-      if(framePoints.length && getVehicle()!=='car'){
-        const inv = ymaps.coordSystem.geo.solveInverseProblem(A, B);
-        const az = inv.forwardAzimuth;
-        for(const f of framePoints){
-          const dA = ymaps.coordSystem.geo.getDistance(A, [f.lat,f.lng]);
-          const dB = ymaps.coordSystem.geo.getDistance(B, [f.lat,f.lng]);
-          if(Math.min(dA,dB) < 100){
-            const off = ymaps.coordSystem.geo.solveDirectProblem([f.lat,f.lng], az+90, 200).endPoint;
-            ref.splice(ref.length-1, 0, off);
-            toast(`Объезд весовой рамки: добавлена via-точка у ${f.name||'рамки'}`, 3500);
-          }
-        }
+      let referencePoints = [start, ...userViaPoints, finish];
+      pendingDetours = [];
+      announceDetoursOnce = false;
+
+      if(framePoints.length && getVehicleValue() !== 'car' && referencePoints.length >= 2){
+        const augmented = injectDetours(referencePoints.slice());
+        referencePoints = augmented.points;
+        pendingDetours = augmented.names;
+        announceDetoursOnce = pendingDetours.length > 0;
       }
 
-      const params = {results:3, routingMode:routingMode(getVehicle()), avoidTrafficJams:true};
-      const t = truckParams(getVehicle()); if(t) params.truck = t;
+      const config = getRoutingConfig();
+      const params = {results:3, routingMode:config.mode, avoidTrafficJams:true};
+      if(config.truck) params.truck = config.truck;
 
       if(!multiRoute){
-        multiRoute = new ymaps.multiRouter.MultiRoute({referencePoints:ref, params},{
-          routeActiveStrokeWidth:6, routeActiveStrokeColor:'#22c55e',
-          routeStrokeStyle:'solid', routeStrokeWidth:3, routeStrokeOpacity:.6, routeStrokeColor:'#f59e0b',
-          wayPointStartIconFillColor:'#22c55e', wayPointFinishIconFillColor:'#ef4444', viaPointIconFillColor:'#60a5fa',
-          wayPointDraggable:false, boundsAutoApply:true
+        multiRoute = new ymaps.multiRouter.MultiRoute({
+          referencePoints,
+          params
+        }, {
+          boundsAutoApply:true,
+          routeActiveStrokeWidth:6,
+          routeActiveStrokeColor:'#22c55e',
+          routeStrokeStyle:'solid',
+          routeStrokeWidth:3,
+          routeStrokeOpacity:0.6,
+          routeStrokeColor:'#f59e0b',
+          wayPointStartIconFillColor:'#22c55e',
+          wayPointFinishIconFillColor:'#ef4444',
+          viaPointIconFillColor:'#60a5fa',
+          wayPointDraggable:false
         });
         map.geoObjects.add(multiRoute);
         multiRoute.model.events.add('requestsuccess', updateUI);
         multiRoute.events.add('activeroutechange', updateUI);
-        multiRoute.model.events.add('requestfail', ()=> toast('Маршрут не построен. Проверь адреса/тип ТС.', 6000));
+        multiRoute.model.events.add('requestfail', () => {
+          notifications.clear();
+          notifications.push('Маршрут не построен. Проверь адреса и тип транспорта.', 5200);
+        });
       } else {
-        multiRoute.model.setReferencePoints(ref);
+        multiRoute.model.setReferencePoints(referencePoints);
         multiRoute.model.setParams(params, true);
       }
-    }catch(e){
-      console.warn(e); toast('Не удалось построить маршрут. Проверь адреса.', 5000);
+
+      routeListEl.innerHTML = '<div class="small">Строим маршрут…</div>';
+      routeListEl.style.display = 'block';
+    } catch (error) {
+      console.warn(error);
+      notifications.clear();
+      notifications.push('Не удалось построить маршрут. Проверь адреса.', 5200);
     }
   }
 
-  const fmtDist=m=> (m/1000).toFixed(1).replace('.',',')+' км';
-  const fmtTime=s=> {const h=(s/3600)|0, m=Math.round((s%3600)/60); return h?`${h} ч ${m} мин`:`${m} мин`;};
+  function injectDetours(points){
+    const projection = ymaps.projection.wgs84Mercator;
+    const insertedNames = [];
+    for(const frame of framePoints){
+      if(!Array.isArray(frame.coords)) continue;
+      const nearest = findNearestSegment(points, frame.coords, projection);
+      if(!nearest || !isFinite(nearest.distance) || nearest.distance > 100) continue;
+      const azimuth = nearest.azimuth;
+      const candidates = [azimuth + 90, azimuth - 90];
+      let chosen = null;
+      let bestSpacing = -Infinity;
+      for(const angle of candidates){
+        const normalized = normalizeAzimuth(angle);
+        const candidate = ymaps.coordSystem.geo.solveDirectProblem(frame.coords, normalized, 200).endPoint;
+        const spacing = ymaps.coordSystem.geo.getDistance(candidate, frame.coords);
+        if(spacing > bestSpacing){
+          bestSpacing = spacing;
+          chosen = candidate;
+        }
+      }
+      if(!chosen) continue;
+      points.splice(nearest.index + 1, 0, chosen);
+      insertedNames.push(frame.name);
+    }
+    return {points, names:insertedNames};
+  }
+
+  function findNearestSegment(points, target, projection){
+    if(points.length < 2) return null;
+    const targetGlobal = projection.toGlobal(target);
+    let best = null;
+    for(let i = 0; i < points.length - 1; i++){
+      const start = points[i];
+      const end = points[i + 1];
+      const startGlobal = projection.toGlobal(start);
+      const endGlobal = projection.toGlobal(end);
+      const vx = endGlobal[0] - startGlobal[0];
+      const vy = endGlobal[1] - startGlobal[1];
+      const lengthSq = vx * vx + vy * vy;
+      if(lengthSq === 0) continue;
+      const px = targetGlobal[0] - startGlobal[0];
+      const py = targetGlobal[1] - startGlobal[1];
+      let t = (px * vx + py * vy) / lengthSq;
+      t = Math.max(0, Math.min(1, t));
+      const projGlobal = [startGlobal[0] + vx * t, startGlobal[1] + vy * t];
+      const projGeo = projection.fromGlobal(projGlobal);
+      const distance = ymaps.coordSystem.geo.getDistance(target, projGeo);
+      if(!isFinite(distance)) continue;
+      if(!best || distance < best.distance){
+        const info = ymaps.coordSystem.geo.solveInverseProblem(start, end);
+        const azimuth = info.forwardAzimuth;
+        best = {distance, index:i, azimuth};
+      }
+    }
+    return best;
+  }
+
+  function normalizeAzimuth(value){
+    let v = value % 360;
+    if(v < 0) v += 360;
+    return v;
+  }
 
   function updateUI(){
     if(!multiRoute) return;
     const routes = multiRoute.getRoutes();
-    if(!routes || routes.getLength()===0){ routeListEl.style.display='none'; toast('Маршрут не найден.', 3500); return; }
-
-    const active = multiRoute.getActiveRoute();
-    if(active){ const p=active.properties.getAll(); toast(`<b>Активный маршрут:</b> ${fmtDist(p?.distance?.value||0)} • ${fmtTime(p?.duration?.value||0)}`, 6000); }
-
-    routeListEl.innerHTML='';
-    for(let i=0;i<routes.getLength();i++){
-      const r=routes.get(i), p=r.properties.getAll();
-      const el=document.createElement('div');
-      el.className='routeItem'+(r===active?' active':'');
-      el.innerHTML=`<div><b>Вариант ${i+1}</b></div><div class="small">${fmtDist(p?.distance?.value||0)} • ${fmtTime(p?.duration?.value||0)}</div>`;
-      el.addEventListener('click',()=>{ multiRoute.setActiveRoute(r); updateUI(); });
-      routeListEl.appendChild(el);
+    if(!routes || routes.getLength() === 0){
+      routeListEl.style.display = 'none';
+      notifications.push('Маршрут не найден.', 3800);
+      return;
     }
-    routeListEl.style.display='block';
+
+    const activeRoute = multiRoute.getActiveRoute();
+    if(activeRoute){
+      const props = activeRoute.properties.getAll();
+      notifications.push(`<b>Активный маршрут:</b> ${fmtDist(props?.distance?.value)} • ${fmtTime(props?.duration?.value)}`, 6200);
+      if(announceDetoursOnce && pendingDetours.length){
+        const uniqueNames = [...new Set(pendingDetours)].filter(Boolean);
+        uniqueNames.forEach((name) => {
+          notifications.push(`Объезд весовой рамки у ${escapeHtml(name)}`, 3600);
+        });
+        pendingDetours = [];
+        announceDetoursOnce = false;
+      }
+    }
+
+    routeListEl.innerHTML = '';
+    for(let i = 0; i < routes.getLength(); i++){
+      const route = routes.get(i);
+      const props = route.properties.getAll();
+      const item = document.createElement('div');
+      item.className = 'routeItem' + (route === activeRoute ? ' active' : '');
+      item.innerHTML = `<div class="title">Вариант ${i + 1}</div><div class="meta">${fmtDist(props?.distance?.value)} • ${fmtTime(props?.duration?.value)}</div>`;
+      item.addEventListener('click', () => {
+        multiRoute.setActiveRoute(route);
+        updateUI();
+      });
+      routeListEl.appendChild(item);
+    }
+    routeListEl.style.display = 'block';
   }
 
   async function loadFrames(){
-    try{
+    try {
       const base = location.href.split('#')[0].split('?')[0].replace(/[^/]+$/, '');
-      const resp = await fetch(base+'data/frames_ready.geojson?v='+Date.now(), {cache:'no-store'});
-      if(!resp.ok) throw new Error('frames_ready.geojson not found');
-      const data = await resp.json();
+      const response = await fetch(`${base}data/frames_ready.geojson?v=${Date.now()}`, {cache:'no-store'});
+      if(!response.ok) throw new Error('frames_ready.geojson not found');
+      const data = await response.json();
 
-      framePoints = [];
       objectManager = new ymaps.ObjectManager({clusterize:false, geoObjectOpenBalloonOnClick:true});
       objectManager.objects.options.set({preset:'islands#blueCircleDotIcon'});
 
-      if(Array.isArray(data.features)){
-        data.features = data.features.filter(f=>f?.geometry?.type==='Point');
-        data.features.forEach(f=>{
-          const [lon,lat] = f.geometry.coordinates;
-          const p = f.properties||{};
-          framePoints.push({lat,lng:lon,name:p.name||'Рамка'});
-          const name = p.name || 'Весовая рамка';
-          const comment = p.comment ? `<div style="margin-top:6px">${escapeHtml(p.comment)}</div>` : '';
-          const date = p.date ? `<div class="small" style="margin-top:6px;color:#9aa3b2">Дата: ${escapeHtml(p.date)}</div>` : '';
-          f.properties = { hintContent:name, balloonContent:`<div style="min-width:220px"><b>${escapeHtml(name)}</b>${comment}${date}</div>` };
+      framePoints = [];
+      if(Array.isArray(data?.features)){
+        const features = [];
+        data.features.forEach((feature, idx) => {
+          if(feature?.geometry?.type !== 'Point' || !Array.isArray(feature.geometry.coordinates)) return;
+          const [lon, lat] = feature.geometry.coordinates;
+          if(!isFinite(lat) || !isFinite(lon)) return;
+          const props = feature.properties || {};
+          const name = props.name || props.title || props.id || `Рамка №${idx + 1}`;
+          const comment = props.comment ? `<div style="margin-top:6px">${escapeHtml(props.comment)}</div>` : '';
+          const date = props.date ? `<div class="small" style="margin-top:6px;color:#9aa3b2">Дата: ${escapeHtml(props.date)}</div>` : '';
+          feature.properties = {
+            hintContent: name,
+            balloonContent: `<div style="min-width:220px"><b>${escapeHtml(name)}</b>${comment}${date}</div>`
+          };
+          features.push(feature);
+          framePoints.push({coords:[lat, lon], name});
         });
+        objectManager.add({type:'FeatureCollection', features});
       }
 
-      objectManager.add(data);
-      map.geoObjects.add(objectManager);
-      toast(`Загружено рамок: ${framePoints.length}`, 2500);
-    }catch(e){ console.warn(e); toast('Не удалось загрузить весовые рамки.', 4000); }
+      if(objectManager) map.geoObjects.add(objectManager);
+      notifications.push(`Загружено рамок: ${framePoints.length}`, 3200);
+    } catch (error) {
+      console.warn(error);
+      notifications.push('Не удалось загрузить весовые рамки.', 4800);
+    }
   }
-
-  const escapeHtml = s => String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
 })();
 </script>
 </body>
