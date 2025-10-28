@@ -2,17 +2,25 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Trans-Time — Маршрут для грузовиков</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trans-Time — карта грузовых маршрутов</title>
+  <meta name="description" content="Интерактивная карта маршрутов Trans-Time для грузовых перевозок с учетом весовых рамок и альтернатив.">
+  <meta property="og:title" content="Trans-Time — карта грузовых маршрутов" />
+  <meta property="og:description" content="Маршруты для грузовиков с весовыми рамками, альтернативами и объездом ограничений." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://hiamlena.github.io/TT-map/" />
+  <meta property="og:image" content="https://hiamlena.github.io/TT-map/assets/logo-tt.svg" />
   <style>
     :root {
       color-scheme: dark;
-      --bg-color: #0f1115;
-      --panel-color: #151925;
-      --input-color: #1b2030;
-      --accent-color: #e11d2e;
-      --text-color: #f0f3ff;
-      --muted-color: #a5acc7;
+      --bg: #0f1115;
+      --panel: #151822;
+      --text: #e6eaf2;
+      --muted: #8892a6;
+      --accent: #e11d2e;
+      --stroke: #232836;
+      --btn-bg: #1b2030;
+      --btn-bg-hover: #232a3d;
     }
 
     * {
@@ -23,21 +31,42 @@
       margin: 0;
       min-height: 100vh;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--bg-color);
-      color: var(--text-color);
+      flex-direction: column;
+      background: radial-gradient(circle at top right, rgba(225, 29, 46, 0.16), transparent 55%), var(--bg);
+      color: var(--text);
       font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-      padding: 24px;
+      padding: clamp(24px, 6vw, 64px);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: clamp(32px, 8vw, 72px);
+    }
+
+    header img {
+      height: clamp(36px, 6vw, 48px);
+    }
+
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color 0.2s ease;
+    }
+
+    nav a:hover,
+    nav a:focus-visible {
+      color: var(--text);
+      outline: none;
     }
 
     main {
-      width: 100%;
-      max-width: 520px;
-      background: var(--panel-color);
-      border-radius: 24px;
-      padding: clamp(24px, 5vw, 40px);
-      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+      max-width: 640px;
       display: flex;
       flex-direction: column;
       gap: 24px;
@@ -45,136 +74,108 @@
 
     h1 {
       margin: 0;
-      font-size: clamp(28px, 6vw, 40px);
+      font-size: clamp(32px, 8vw, 56px);
       font-weight: 700;
-      line-height: 1.2;
+      line-height: 1.1;
     }
 
-    p.subtitle {
+    p.lead {
       margin: 0;
-      color: var(--muted-color);
-      font-size: clamp(15px, 4vw, 18px);
+      font-size: clamp(16px, 4vw, 20px);
       line-height: 1.6;
+      color: var(--muted);
     }
 
-    label {
-      display: block;
-      font-size: 14px;
-      margin-bottom: 8px;
-      color: var(--muted-color);
-    }
-
-    .input-row {
+    .actions {
       display: flex;
-      flex-direction: column;
-      gap: 12px;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 16px;
     }
 
-    input[type="text"] {
-      width: 100%;
-      background: var(--input-color);
-      border: 1px solid transparent;
-      border-radius: 12px;
-      padding: 14px 16px;
-      color: var(--text-color);
-      font-size: 16px;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    input[type="text"]:focus-visible {
-      outline: none;
-      border-color: rgba(225, 29, 46, 0.6);
-      box-shadow: 0 0 0 4px rgba(225, 29, 46, 0.25);
-    }
-
-    button {
+    .btn {
       appearance: none;
       border: none;
       border-radius: 999px;
-      padding: 16px 24px;
-      background: var(--accent-color);
-      color: #fff;
+      padding: 16px 28px;
       font-size: 16px;
       font-weight: 600;
       letter-spacing: 0.01em;
       cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      color: #fff;
+      background: var(--accent);
+      box-shadow: 0 22px 50px rgba(225, 29, 46, 0.3);
     }
 
-    button:hover,
-    button:focus-visible {
-      outline: none;
-      filter: brightness(1.08);
-      box-shadow: 0 14px 32px rgba(225, 29, 46, 0.35);
+    .btn:hover,
+    .btn:focus-visible {
       transform: translateY(-1px);
+      box-shadow: 0 26px 60px rgba(225, 29, 46, 0.4);
+      outline: none;
     }
 
-    button:active {
-      transform: translateY(0);
+    .secondary {
+      background: var(--btn-bg);
+      color: var(--text);
+      box-shadow: none;
+      border: 1px solid var(--stroke);
+    }
+
+    .secondary:hover,
+    .secondary:focus-visible {
+      background: var(--btn-bg-hover);
+      transform: none;
       box-shadow: none;
     }
 
-    @media (max-width: 520px) {
-      main {
-        border-radius: 18px;
+    footer {
+      margin-top: auto;
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      padding-top: 24px;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 32px 20px;
       }
 
-      button {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      nav {
         width: 100%;
+        display: flex;
+        justify-content: space-between;
       }
     }
   </style>
-  <script defer src="https://api-maps.yandex.ru/2.1/?apikey=317aa42d-aa15-4acf-885a-6d6bfddb2339&lang=ru_RU&load=SuggestView"></script>
 </head>
 <body>
+  <header>
+    <img src="./assets/logo-tt.svg" alt="Trans-Time" loading="lazy" />
+    <nav>
+      <a href="#features">Функции</a>
+      <a href="https://hiamlena.github.io/TT-map/map/">Карта</a>
+    </nav>
+  </header>
   <main>
-    <header>
-      <h1>Trans-Time — Маршрут для грузовиков</h1>
-      <p class="subtitle">Маршрут для грузовиков с объездом рамок и платных дорог</p>
-    </header>
-    <section class="input-row">
-      <label for="from-input">Откуда</label>
-      <input id="from-input" type="text" name="from" placeholder="Начните вводить адрес" autocomplete="off" />
-    </section>
-    <button id="build-route" type="button">Построить</button>
+    <h1>Маршруты для грузовиков с объездом рамок и альтернативами</h1>
+    <p class="lead" id="features">Постройте оптимальный путь для тяжёлого транспорта: учитываем весовые рамки, добавляем via-точки, подсказываем адреса и показываем до трёх вариантов маршрутов.</p>
+    <div class="actions">
+      <a class="btn" href="https://hiamlena.github.io/TT-map/map/">Открыть карту</a>
+      <a class="btn secondary" href="https://hiamlena.github.io/TT-map/map/" target="_blank" rel="noopener">Открыть в новой вкладке</a>
+    </div>
   </main>
+  <footer>
+    © <span id="year"></span> Trans-Time. Карта работает на Яндекс.Картах 2.1 без сторонних библиотек.
+  </footer>
   <script>
-    (function () {
-      const goToMap = () => {
-        const input = document.getElementById('from-input');
-        const value = (input.value || '').trim();
-        if (!value) {
-          input.focus();
-          return;
-        }
-        const encoded = encodeURIComponent(value);
-        window.location.href = `./map/?from=${encoded}`;
-      };
-
-      const setupInteractions = () => {
-        const input = document.getElementById('from-input');
-        const button = document.getElementById('build-route');
-
-        button.addEventListener('click', goToMap);
-        input.addEventListener('keydown', (event) => {
-          if (event.key === 'Enter') {
-            event.preventDefault();
-            goToMap();
-          }
-        });
-      };
-
-      const initSuggest = () => {
-        if (window.ymaps && typeof window.ymaps.ready === 'function') {
-          window.ymaps.ready(() => {
-            new window.ymaps.SuggestView('from-input', { results: 7 });
-          });
-        }
-      };
-
-      window.addEventListener('DOMContentLoaded', setupInteractions);
-      window.addEventListener('load', initSuggest);
-    })();
+    document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 </body>
 </html>
