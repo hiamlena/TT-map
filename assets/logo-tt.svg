@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title>Trans-Time</title>
+  <defs>
+    <linearGradient id="g" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#e11d2e"/>
+      <stop offset="100%" stop-color="#fb7185"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="24" fill="#0f1115"/>
+  <path fill="url(#g)" d="M28 34h64l-6 18H46l-18 52H18l10-30H26c-4 0-6-4-5-7l7-19c1-3 4-6 7-6Z"/>
+  <path fill="#e6eaf2" d="M76 56h28l-7 20H69l-10 28H43l12-34h13c4 0 7-3 8-6Z"/>
+</svg>
