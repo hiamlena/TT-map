@@ -1,0 +1,70 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "frame-moscow",
+      "properties": {
+        "name": "Весовой контроль М-11, Москва",
+        "comment": "Контроль перед выездом из Москвы",
+        "date": "2024-02-10"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [37.5305, 55.9281]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "frame-zelenograd",
+      "properties": {
+        "name": "Весовая рамка Зеленоград",
+        "comment": "Работает круглосуточно",
+        "date": "2024-01-18"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [37.1656, 56.0012]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "frame-tver",
+      "properties": {
+        "name": "Весовой контроль Тверь",
+        "comment": "Перед мостом через Волгу",
+        "date": "2023-12-05"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [35.8994, 56.8575]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "frame-velikiy-novgorod",
+      "properties": {
+        "name": "Весовая рамка Великий Новгород",
+        "comment": "Часто перекрывают правую полосу",
+        "date": "2024-03-22"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [31.3196, 58.5416]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "frame-spb",
+      "properties": {
+        "name": "Весовой контроль Санкт-Петербург",
+        "comment": "Перед КАД",
+        "date": "2024-04-01"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [30.3553, 59.7384]
+      }
+    }
+  ]
+}
