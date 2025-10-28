@@ -1,957 +1,225 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TT Map — Маршруты для тяжёлого транспорта</title>
-  <style>
-    :root {
-      color-scheme: dark;
-      --bg: #0f1115;
-      --bg-secondary: #151822;
-      --border: #232836;
-      --text: #e6eaf2;
-      --accent: #e11d2e;
-      --success: #22c55e;
-      --warning: #f59e0b;
-      --info: #60a5fa;
-      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    h1, h2, h3, h4, h5, h6 {
-      margin: 0;
-      font-weight: 600;
-    }
-
-    .app-header {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      backdrop-filter: blur(12px);
-      background: rgba(15, 17, 21, 0.92);
-      border-bottom: 1px solid var(--border);
-    }
-
-    .header-inner {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      padding: 1rem 1.5rem;
-      align-items: flex-end;
-    }
-
-    .brand {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-      margin-right: 1.5rem;
-    }
-
-    .brand-title {
-      font-size: 1.1rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--info);
-    }
-
-    .brand-subtitle {
-      font-size: 0.8rem;
-      color: rgba(230, 234, 242, 0.6);
-    }
-
-    form.route-form {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(220px, 1fr));
-      gap: 0.75rem;
-      flex: 1;
-      min-width: 300px;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.45rem;
-    }
-
-    label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: rgba(230, 234, 242, 0.62);
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 0.65rem 0.8rem;
-      border-radius: 0.75rem;
-      border: 1px solid var(--border);
-      background: var(--bg-secondary);
-      color: var(--text);
-      font-size: 0.95rem;
-      outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    input[type="text"]:focus {
-      border-color: var(--info);
-      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
-    }
-
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      align-items: center;
-    }
-
-    .transport-toggle {
-      display: inline-flex;
-      padding: 0.25rem;
-      border-radius: 999px;
-      background: rgba(35, 40, 54, 0.9);
-      border: 1px solid rgba(35, 40, 54, 0.8);
-      gap: 0.25rem;
-    }
-
-    .transport-toggle button {
-      appearance: none;
-      border: none;
-      padding: 0.4rem 0.95rem;
-      border-radius: 999px;
-      background: transparent;
-      color: rgba(230, 234, 242, 0.7);
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
-    }
-
-    .transport-toggle button.active {
-      background: var(--accent);
-      color: #fff;
-      box-shadow: 0 4px 18px rgba(225, 29, 46, 0.35);
-    }
-
-    .control-buttons {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .button {
-      appearance: none;
-      border: none;
-      border-radius: 0.75rem;
-      padding: 0.65rem 1.25rem;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.4rem;
-    }
-
-    .button-primary {
-      background: var(--accent);
-      color: #fff;
-      box-shadow: 0 10px 30px rgba(225, 29, 46, 0.35);
-    }
-
-    .button-secondary {
-      background: rgba(35, 40, 54, 0.8);
-      color: rgba(230, 234, 242, 0.85);
-      border: 1px solid rgba(35, 40, 54, 0.8);
-    }
-
-    .button:active {
-      transform: translateY(1px);
-    }
-
-    .map-layout {
-      flex: 1;
-      display: flex;
-      min-height: 0;
-    }
-
-    #map {
-      flex: 1;
-      min-height: 400px;
-    }
-
-    .alternatives-panel {
-      width: 320px;
-      max-width: 100%;
-      background: var(--bg-secondary);
-      border-left: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .alternatives-header {
-      padding: 1rem 1.25rem 0.5rem;
-      border-bottom: 1px solid rgba(35, 40, 54, 0.7);
-      font-size: 0.9rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: rgba(230, 234, 242, 0.6);
-    }
-
-    .alternatives-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 0.75rem 1rem 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .alternative-card {
-      background: rgba(15, 17, 21, 0.8);
-      border: 1px solid transparent;
-      border-radius: 0.75rem;
-      padding: 0.85rem 1rem;
-      cursor: pointer;
-      transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
-    }
-
-    .alternative-card:hover {
-      transform: translateY(-1px);
-      border-color: rgba(96, 165, 250, 0.4);
-    }
-
-    .alternative-card.active {
-      border-color: rgba(34, 197, 94, 0.8);
-      box-shadow: 0 8px 30px rgba(34, 197, 94, 0.25);
-    }
-
-    .alternative-title {
-      font-size: 0.95rem;
-      margin-bottom: 0.4rem;
-      color: var(--text);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .badge {
-      border-radius: 999px;
-      padding: 0.2rem 0.55rem;
-      font-size: 0.7rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .badge-active {
-      background: rgba(34, 197, 94, 0.18);
-      color: var(--success);
-    }
-
-    .badge-alt {
-      background: rgba(245, 158, 11, 0.18);
-      color: var(--warning);
-    }
-
-    .alternative-meta {
-      display: flex;
-      gap: 0.75rem;
-      font-size: 0.85rem;
-      color: rgba(230, 234, 242, 0.75);
-    }
-
-    .toast-container {
-      position: fixed;
-      right: 1.25rem;
-      bottom: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      z-index: 1000;
-      max-width: min(320px, calc(100vw - 2.5rem));
-    }
-
-    .toast {
-      padding: 0.75rem 0.9rem;
-      border-radius: 0.75rem;
-      background: rgba(21, 24, 34, 0.92);
-      border: 1px solid rgba(35, 40, 54, 0.8);
-      color: var(--text);
-      font-size: 0.85rem;
-      line-height: 1.4;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-      cursor: pointer;
-      transition: transform 0.2s ease, border-color 0.2s ease;
-    }
-
-    .toast:hover {
-      transform: translateY(-1px);
-    }
-
-    .toast--success {
-      border-color: rgba(34, 197, 94, 0.65);
-    }
-
-    .toast--info {
-      border-color: rgba(96, 165, 250, 0.55);
-    }
-
-    .toast--warning {
-      border-color: rgba(245, 158, 11, 0.55);
-    }
-
-    .toast--error {
-      border-color: rgba(225, 29, 46, 0.7);
-    }
-
-    .toast strong {
-      font-weight: 600;
-      color: #fff;
-    }
-
-    @media (max-width: 1200px) {
-      form.route-form {
-        grid-template-columns: repeat(2, minmax(200px, 1fr));
-      }
-    }
-
-    @media (max-width: 1024px) {
-      .header-inner {
-        align-items: stretch;
-      }
-      .controls {
-        width: 100%;
-        justify-content: space-between;
-      }
-      .control-buttons {
-        margin-left: auto;
-      }
-    }
-
-    @media (max-width: 900px) {
-      .map-layout {
-        flex-direction: column;
-      }
-      .alternatives-panel {
-        width: 100%;
-        height: 220px;
-        border-left: none;
-        border-top: 1px solid var(--border);
-      }
-      .alternatives-list {
-        flex-direction: row;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        overflow-y: hidden;
-      }
-      .alternative-card {
-        min-width: 260px;
-      }
-    }
-
-    @media (max-width: 680px) {
-      .header-inner {
-        padding: 0.85rem 1rem;
-      }
-      form.route-form {
-        grid-template-columns: 1fr;
-      }
-      .brand {
-        width: 100%;
-      }
-      .controls {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      .control-buttons {
-        width: 100%;
-        justify-content: flex-start;
-      }
-      .button {
-        width: 100%;
-      }
-    }
-  </style>
-  <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=317aa42d-aa15-4acf-885a-6d6bfddb2339&suggest_apikey=317aa42d-aa15-4acf-885a-6d6bfddb2339"></script>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Trans-Time — Маршрут для грузовиков</title>
+<style>
+:root{--bg:#0f1115;--panel:#151822;--muted:#8892a6;--text:#e6eaf2;--accent:#e11d2e;--stroke:#232836;--btn:#1b2030;--btn-h:#232a3d}
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial}
+#app{display:grid;grid-template-rows:auto 1fr}
+header{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,var(--panel),rgba(21,24,34,.8));border-bottom:1px solid var(--stroke);backdrop-filter:blur(6px)}
+.bar{max-width:1200px;margin:8px auto;padding:8px 12px;display:grid;gap:8px;grid-template-columns:1fr 1fr minmax(120px,auto) auto}
+.row2{display:flex;gap:8px;align-items:center;grid-column:1/-1}
+.brand{font-weight:700;letter-spacing:.3px}
+.field{background:var(--btn);border:1px solid var(--stroke);border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px}
+.field input{width:100%;background:transparent;border:0;outline:0;color:var(--text);font:14px/1.2 inherit}
+.pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--stroke);background:var(--btn);padding:6px 10px;border-radius:999px;cursor:pointer;user-select:none}
+.pill input{display:none}.pill.active{background:var(--btn-h);border-color:var(--accent)}
+.btn{background:var(--accent);border:0;color:#fff;font-weight:600;padding:10px 12px;border-radius:10px;cursor:pointer}
+.btn.secondary{background:var(--btn);color:var(--text);border:1px solid var(--stroke)}
+.small{font-size:12px;color:var(--muted)}
+#map{height:100%;width:100%}
+.legend{position:absolute;left:12px;bottom:12px;z-index:4;background:rgba(21,24,34,.9);border:1px solid var(--stroke);border-radius:12px;padding:8px 10px;display:flex;gap:10px;align-items:center}
+.legend .dot{width:10px;height:10px;border-radius:50%}
+.toast{position:fixed;right:12px;bottom:12px;z-index:10;background:rgba(21,24,34,.95);border:1px solid var(--stroke);box-shadow:0 6px 22px rgba(0,0,0,.35);padding:10px 14px;border-radius:12px;display:none;gap:10px;align-items:center}
+.routeList{position:absolute;right:12px;top:90px;z-index:4;min-width:220px;max-width:300px;background:rgba(21,24,34,.95);border:1px solid var(--stroke);border-radius:12px;padding:8px;display:none}
+.routeItem{padding:8px;border-radius:10px;border:1px solid transparent;cursor:pointer}
+.routeItem:hover{background:var(--btn)}.routeItem.active{border-color:var(--accent);background:var(--btn-h)}
+@media (max-width:900px){.bar{grid-template-columns:1fr;gap:6px}.row2{flex-wrap:wrap}.routeList{top:auto;bottom:90px;right:12px}}
+</style>
+<!-- Яндекс.Карты 2.1 -->
+<script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=317aa42d-aa15-4acf-885a-6d6bfddb2339&suggest_apikey=317aa42d-aa15-4acf-885a-6d6bfddb2339"></script>
 </head>
 <body>
-  <header class="app-header">
-    <div class="header-inner">
-      <div class="brand">
-        <span class="brand-title">TT Map</span>
-        <span class="brand-subtitle">Маршруты для тяжёлого транспорта</span>
-      </div>
-      <form class="route-form" id="routeForm">
-        <div class="field">
-          <label for="fromInput">Откуда</label>
-          <input type="text" id="fromInput" name="from" placeholder="Начальная точка" value="Москва" autocomplete="off">
+<div id="app">
+  <header>
+    <div class="bar">
+      <div class="brand">Trans-Time • Маршрут для грузовиков</div>
+      <div class="small">Клик по карте ➜ добавить via-точку</div>
+      <div></div>
+      <div class="small" style="text-align:right">Выбирай альтернативы справа</div>
+
+      <div class="field"><span>Откуда</span><input id="from" type="text" placeholder="Адрес, город"/></div>
+      <div class="field"><span>Куда</span><input id="to" type="text" placeholder="Адрес, город"/></div>
+
+      <div class="row2">
+        <div id="vehicleGroup" style="display:flex;gap:8px;flex-wrap:wrap">
+          <label class="pill active"><input type="radio" name="veh" value="car" checked><span>Легковой</span></label>
+          <label class="pill"><input type="radio" name="veh" value="truck40"><span>Грузовой ≤ 40 т</span></label>
+          <label class="pill"><input type="radio" name="veh" value="truckHeavy"><span>Грузовой &gt; 40 т</span></label>
         </div>
-        <div class="field">
-          <label for="toInput">Куда</label>
-          <input type="text" id="toInput" name="to" placeholder="Пункт назначения" value="Санкт-Петербург" autocomplete="off">
-        </div>
-      </form>
-      <div class="controls">
-        <div class="transport-toggle" id="transportToggle">
-          <button type="button" class="active" data-mode="auto">Легковой</button>
-          <button type="button" data-mode="truckLight">Грузовой ≤40т</button>
-          <button type="button" data-mode="truckHeavy">Грузовой &gt;40т</button>
-        </div>
-        <div class="control-buttons">
-          <button type="button" class="button button-primary" id="buildButton">Построить</button>
-          <button type="button" class="button button-secondary" id="resetViaButton">Сбросить via-точки</button>
+        <div style="display:flex;gap:8px;margin-left:auto">
+          <button id="buildBtn" class="btn">Построить маршрут</button>
+          <button id="clearVia" class="btn secondary">Сбросить via-точки</button>
         </div>
       </div>
     </div>
   </header>
-  <div class="map-layout">
+
+  <div style="position:relative">
     <div id="map"></div>
-    <aside class="alternatives-panel">
-      <div class="alternatives-header">Альтернативы маршрута</div>
-      <div class="alternatives-list" id="alternativesList"></div>
-    </aside>
+    <div class="legend">
+      <div class="dot" style="background:#22c55e"></div><span class="small">Маршрут</span>
+      <div class="dot" style="background:#f59e0b"></div><span class="small">Альтернативы</span>
+      <div class="dot" style="background:#60a5fa"></div><span class="small">Весовые рамки</span>
+    </div>
+    <div id="routeList" class="routeList"></div>
   </div>
-  <div class="toast-container" id="toastContainer"></div>
-  <script>
-    (function () {
-      const state = {
-        map: null,
-        multiRoute: null,
-        transportMode: 'auto',
-        viaPoints: [],
-        detourFrames: new Set(),
-        framesData: [],
-        pointCache: null,
-        framesManager: null,
-        isBuilding: false
-      };
+</div>
+<div id="toast" class="toast"></div>
 
-      const ui = {};
+<script>
+(function(){
+  let map, multiRoute, viaPoints = [];
+  let objectManager, framePoints = [];
+  const $ = s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+  const toastEl = $('#toast'), routeListEl = $('#routeList');
 
-      ymaps.ready(init);
+  const toast=(html,ms=4500)=>{ toastEl.innerHTML=html; toastEl.style.display='flex'; clearTimeout(toastEl._t); toastEl._t=setTimeout(()=>toastEl.style.display='none',ms); };
+  const setActivePill=v=> $$('#vehicleGroup .pill').forEach(p=>p.classList.toggle('active', p.querySelector('input').value===v));
+  const getVehicle=()=> (document.querySelector('input[name="veh"]:checked')?.value)||'car';
+  const routingMode=v=> v==='car' ? 'auto' : 'truck';
+  const truckParams=v=> v==='truck40' ? {weight:40000} : (v==='truckHeavy' ? {weight:50000, axleCount:5} : null);
 
-      function init() {
-        ui.fromInput = document.getElementById('fromInput');
-        ui.toInput = document.getElementById('toInput');
-        ui.buildButton = document.getElementById('buildButton');
-        ui.resetViaButton = document.getElementById('resetViaButton');
-        ui.alternativesList = document.getElementById('alternativesList');
-        ui.toastContainer = document.getElementById('toastContainer');
-        ui.transportButtons = Array.from(document.querySelectorAll('#transportToggle button'));
-        ui.routeForm = document.getElementById('routeForm');
+  ymaps.ready(init);
 
-        state.map = new ymaps.Map('map', {
-          center: [56.2, 36.8],
-          zoom: 6,
-          controls: ['zoomControl', 'typeSelector']
-        }, {
-          suppressMapOpenBlock: true
+  function init(){
+    map = new ymaps.Map('map',{center:[55.751244,37.618423],zoom:8,controls:['zoomControl','geolocationControl','typeSelector','fullscreenControl']},{suppressMapOpenBlock:true});
+    new ymaps.SuggestView('from',{results:8,width:'auto'});
+    new ymaps.SuggestView('to',{results:8,width:'auto'});
+
+    $$('#vehicleGroup .pill input').forEach(r=> r.addEventListener('change',()=>{ setActivePill(r.value); if($('#from').value&&$('#to').value) buildRoute(); }));
+
+    map.events.add('click', e=>{
+      const c = e.get('coords');
+      if(confirm(`Добавить via-точку?\n${c[0].toFixed(6)}, ${c[1].toFixed(6)}`)){
+        viaPoints.push(c);
+        map.geoObjects.add(new ymaps.Placemark(c,{hintContent:'via-точка'},{preset:'islands#blueDotIcon'}));
+        if($('#from').value && $('#to').value) buildRoute();
+      }
+    });
+
+    $('#buildBtn').addEventListener('click', buildRoute);
+    $('#clearVia').addEventListener('click', ()=>{
+      viaPoints = [];
+      map.geoObjects.each(o=>{ try{ if(o?.options?.get('preset')==='islands#blueDotIcon') map.geoObjects.remove(o); }catch{} });
+      if(multiRoute) buildRoute();
+    });
+
+    loadFrames();
+    ['from','to'].forEach(id=> $('#'+id).addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); buildRoute(); }}));
+  }
+
+  async function geocodeToPoint(q){
+    if(Array.isArray(q)) return q;
+    const res = await ymaps.geocode(q,{results:1});
+    const g = res.geoObjects.get(0);
+    if(!g) throw new Error('Адрес не найден: '+q);
+    return g.geometry.getCoordinates();
+  }
+
+  async function buildRoute(){
+    const a=$('#from').value.trim(), b=$('#to').value.trim();
+    if(!a||!b){ toast('Укажи <b>Откуда</b> и <b>Куда</b>'); return; }
+
+    try{
+      const [A,B] = await Promise.all([geocodeToPoint(a), geocodeToPoint(b)]);
+      let ref = [A, ...viaPoints, B];
+
+      // простая эвристика объезда рамок: если ближе 100м к A/B — вставим via ~200м вбок
+      if(framePoints.length && getVehicle()!=='car'){
+        const inv = ymaps.coordSystem.geo.solveInverseProblem(A, B);
+        const az = inv.forwardAzimuth;
+        for(const f of framePoints){
+          const dA = ymaps.coordSystem.geo.getDistance(A, [f.lat,f.lng]);
+          const dB = ymaps.coordSystem.geo.getDistance(B, [f.lat,f.lng]);
+          if(Math.min(dA,dB) < 100){
+            const off = ymaps.coordSystem.geo.solveDirectProblem([f.lat,f.lng], az+90, 200).endPoint;
+            ref.splice(ref.length-1, 0, off);
+            toast(`Объезд весовой рамки: добавлена via-точка у ${f.name||'рамки'}`, 3500);
+          }
+        }
+      }
+
+      const params = {results:3, routingMode:routingMode(getVehicle()), avoidTrafficJams:true};
+      const t = truckParams(getVehicle()); if(t) params.truck = t;
+
+      if(!multiRoute){
+        multiRoute = new ymaps.multiRouter.MultiRoute({referencePoints:ref, params},{
+          routeActiveStrokeWidth:6, routeActiveStrokeColor:'#22c55e',
+          routeStrokeStyle:'solid', routeStrokeWidth:3, routeStrokeOpacity:.6, routeStrokeColor:'#f59e0b',
+          wayPointStartIconFillColor:'#22c55e', wayPointFinishIconFillColor:'#ef4444', viaPointIconFillColor:'#60a5fa',
+          wayPointDraggable:false, boundsAutoApply:true
         });
-
-        new ymaps.SuggestView('fromInput');
-        new ymaps.SuggestView('toInput');
-
-        state.framesManager = new ymaps.ObjectManager({
-          clusterize: false,
-          geoObjectOpenBalloonOnClick: true
-        });
-        state.framesManager.objects.options.set({
-          preset: 'islands#circleDotIcon',
-          iconColor: '#60a5fa',
-          iconImageSize: [18, 18]
-        });
-        state.map.geoObjects.add(state.framesManager);
-        loadFrames();
-
-        state.map.events.add('click', onMapClick);
-
-        ui.buildButton.addEventListener('click', () => buildRoute({ useCache: false }));
-        ui.resetViaButton.addEventListener('click', resetViaPoints);
-        ui.routeForm.addEventListener('submit', (event) => {
-          event.preventDefault();
-          buildRoute({ useCache: false });
-        });
-
-        ui.transportButtons.forEach((button) => {
-          button.addEventListener('click', () => {
-            if (button.classList.contains('active')) {
-              return;
-            }
-            ui.transportButtons.forEach((b) => b.classList.remove('active'));
-            button.classList.add('active');
-            state.transportMode = button.dataset.mode;
-            showToast(`Режим: ${getTransportLabel(state.transportMode)}`, 'info', 2500);
-            if (state.pointCache) {
-              buildRoute({ useCache: true });
-            }
-          });
-        });
-
-        buildRoute({ useCache: false });
+        map.geoObjects.add(multiRoute);
+        multiRoute.model.events.add('requestsuccess', updateUI);
+        multiRoute.events.add('activeroutechange', updateUI);
+        multiRoute.model.events.add('requestfail', ()=> toast('Маршрут не построен. Проверь адреса/тип ТС.', 6000));
+      } else {
+        multiRoute.model.setReferencePoints(ref);
+        multiRoute.model.setParams(params, true);
       }
+    }catch(e){
+      console.warn(e); toast('Не удалось построить маршрут. Проверь адреса.', 5000);
+    }
+  }
 
-      function getBaseUrl() {
-        const base = location.href.split('#')[0].split('?')[0].replace(/[^/]+$/, '');
-        return base;
-      }
+  const fmtDist=m=> (m/1000).toFixed(1).replace('.',',')+' км';
+  const fmtTime=s=> {const h=(s/3600)|0, m=Math.round((s%3600)/60); return h?`${h} ч ${m} мин`:`${m} мин`;};
 
-      function loadFrames() {
-        const base = getBaseUrl();
-        fetch(`${base}data/frames_ready.geojson?v=${Date.now()}`)
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error(`Не удалось загрузить весовые рамки: ${response.status}`);
-            }
-            return response.json();
-          })
-          .then((data) => {
-            if (!data || !Array.isArray(data.features)) {
-              throw new Error('Файл весовых рамок повреждён');
-            }
-            state.framesData = [];
-            const prepared = {
-              type: data.type,
-              features: data.features.map((feature, index) => {
-                const props = feature.properties || {};
-                const coords = feature.geometry && feature.geometry.coordinates ? feature.geometry.coordinates.slice() : null;
-                if (coords) {
-                  state.framesData.push({
-                    id: feature.id || `frame-${index}`,
-                    coords: [coords[1], coords[0]],
-                    name: props.name || 'Весовая рамка',
-                    comment: props.comment || '',
-                    date: props.date || ''
-                  });
-                }
-                return {
-                  ...feature,
-                  id: feature.id || `frame-${index}`,
-                  properties: {
-                    ...props,
-                    hintContent: props.name || 'Весовая рамка',
-                    balloonContentHeader: `<strong>${props.name || 'Весовая рамка'}</strong>`,
-                    balloonContentBody: `<div>${props.comment ? props.comment : 'Нет комментария'}</div>`,
-                    balloonContentFooter: props.date ? `<div style="opacity:0.7;font-size:12px;">Обновлено: ${props.date}</div>` : ''
-                  }
-                };
-              })
-            };
-            state.framesManager.add(prepared);
-          })
-          .catch((error) => {
-            console.error(error);
-            showToast(error.message || 'Не удалось загрузить весовые рамки', 'error', 6000);
-          });
-      }
+  function updateUI(){
+    if(!multiRoute) return;
+    const routes = multiRoute.getRoutes();
+    if(!routes || routes.getLength()===0){ routeListEl.style.display='none'; toast('Маршрут не найден.', 3500); return; }
 
-      function onMapClick(event) {
-        const coords = event.get('coords');
-        if (!coords) {
-          return;
-        }
-        const confirmed = window.confirm('Добавить промежуточную via-точку в маршрут?');
-        if (!confirmed) {
-          return;
-        }
-        state.viaPoints.push({
-          coords,
-          kind: 'user'
-        });
-        showToast('Via-точка добавлена', 'info', 2000);
-        if (state.pointCache) {
-          buildRoute({ useCache: true });
-        }
-      }
+    const active = multiRoute.getActiveRoute();
+    if(active){ const p=active.properties.getAll(); toast(`<b>Активный маршрут:</b> ${fmtDist(p?.distance?.value||0)} • ${fmtTime(p?.duration?.value||0)}`, 6000); }
 
-      function resetViaPoints() {
-        if (!state.viaPoints.length && !state.detourFrames.size) {
-          showToast('Via-точек нет', 'info', 2000);
-          return;
-        }
-        state.viaPoints = [];
-        state.detourFrames.clear();
-        showToast('Все via-точки сброшены', 'info', 2000);
-        if (state.pointCache) {
-          buildRoute({ useCache: true });
-        }
-      }
+    routeListEl.innerHTML='';
+    for(let i=0;i<routes.getLength();i++){
+      const r=routes.get(i), p=r.properties.getAll();
+      const el=document.createElement('div');
+      el.className='routeItem'+(r===active?' active':'');
+      el.innerHTML=`<div><b>Вариант ${i+1}</b></div><div class="small">${fmtDist(p?.distance?.value||0)} • ${fmtTime(p?.duration?.value||0)}</div>`;
+      el.addEventListener('click',()=>{ multiRoute.setActiveRoute(r); updateUI(); });
+      routeListEl.appendChild(el);
+    }
+    routeListEl.style.display='block';
+  }
 
-      function getTransportLabel(mode) {
-        switch (mode) {
-          case 'auto':
-            return 'Легковой транспорт';
-          case 'truckLight':
-            return 'Грузовой ≤40т';
-          case 'truckHeavy':
-            return 'Грузовой >40т';
-          default:
-            return 'Неизвестный режим';
-        }
-      }
+  async function loadFrames(){
+    try{
+      const base = location.href.split('#')[0].split('?')[0].replace(/[^/]+$/, '');
+      const resp = await fetch(base+'data/frames_ready.geojson?v='+Date.now(), {cache:'no-store'});
+      if(!resp.ok) throw new Error('frames_ready.geojson not found');
+      const data = await resp.json();
 
-      function getRouteParams() {
-        const params = {
-          results: 3,
-          routingMode: 'auto'
-        };
-        if (state.transportMode === 'auto') {
-          params.routingMode = 'auto';
-        } else if (state.transportMode === 'truckLight') {
-          params.routingMode = 'truck';
-          params.truck = { weight: 40000 };
-        } else if (state.transportMode === 'truckHeavy') {
-          params.routingMode = 'truck';
-          params.truck = { weight: 50000, axleCount: 5 };
-        }
-        return params;
-      }
+      framePoints = [];
+      objectManager = new ymaps.ObjectManager({clusterize:false, geoObjectOpenBalloonOnClick:true});
+      objectManager.objects.options.set({preset:'islands#blueCircleDotIcon'});
 
-      async function geocodeAddress(value) {
-        const trimmed = value.trim();
-        if (!trimmed) {
-          throw new Error('Адрес не заполнен');
-        }
-        const result = await ymaps.geocode(trimmed, { results: 1 });
-        const first = result.geoObjects.get(0);
-        if (!first) {
-          throw new Error(`Не удалось определить адрес «${trimmed}»`);
-        }
-        return {
-          coords: first.geometry.getCoordinates(),
-          text: first.properties.get('text') || trimmed
-        };
-      }
-
-      async function buildRoute({ useCache = false } = {}) {
-        if (state.isBuilding) {
-          return;
-        }
-        const fromValue = ui.fromInput.value.trim();
-        const toValue = ui.toInput.value.trim();
-        if (!fromValue || !toValue) {
-          showToast('Заполните поля «Откуда» и «Куда»', 'warning', 4000);
-          return;
-        }
-        try {
-          state.isBuilding = true;
-          const cacheMatches = Boolean(state.pointCache && state.pointCache.fromValue === fromValue && state.pointCache.toValue === toValue);
-          if (!cacheMatches) {
-            state.viaPoints = state.viaPoints.filter((via) => via.kind === 'user');
-            state.detourFrames.clear();
-          }
-          if (!useCache || !cacheMatches) {
-            const [fromGeo, toGeo] = await Promise.all([
-              geocodeAddress(fromValue),
-              geocodeAddress(toValue)
-            ]);
-            state.pointCache = {
-              fromValue,
-              toValue,
-              fromCoords: fromGeo.coords,
-              toCoords: toGeo.coords,
-              fromLabel: fromGeo.text,
-              toLabel: toGeo.text
-            };
-          }
-          const params = getRouteParams();
-          const referencePoints = [
-            { type: 'wayPoint', point: state.pointCache.fromCoords },
-            ...state.viaPoints.map((via) => ({ type: 'viaPoint', point: via.coords })),
-            { type: 'wayPoint', point: state.pointCache.toCoords }
-          ];
-
-          if (!state.multiRoute) {
-            state.multiRoute = new ymaps.multiRouter.MultiRoute({
-              referencePoints,
-              params
-            }, {
-              boundsAutoApply: true
-            });
-            state.multiRoute.options.set({
-              routeActiveStrokeColor: '#22c55e',
-              routeActiveStrokeWidth: 6,
-              routeStrokeColor: '#f59e0b',
-              routeStrokeWidth: 4,
-              routeActiveStrokeStyle: 'solid',
-              routeStrokeStyle: 'solid',
-              wayPointVisible: true,
-              viaPointVisible: true,
-              viaPointIconFillColor: '#1d4ed8',
-              viaPointIconStrokeColor: '#60a5fa'
-            });
-            state.multiRoute.model.events.add('requestsuccess', onRouteRequestSuccess);
-            state.multiRoute.model.events.add('requestfail', onRouteRequestFail);
-            state.multiRoute.events.add('activeroutechange', onActiveRouteChange);
-            state.map.geoObjects.add(state.multiRoute);
-          } else {
-            state.multiRoute.model.setParams(params);
-            state.multiRoute.model.setReferencePoints(referencePoints);
-          }
-        } catch (error) {
-          console.error(error);
-          showToast(error.message || 'Не удалось построить маршрут', 'error', 6000);
-        } finally {
-          state.isBuilding = false;
-        }
-      }
-
-      function onRouteRequestSuccess() {
-        const detourApplied = analyzeFramesForDetour();
-        if (detourApplied) {
-          setTimeout(() => buildRoute({ useCache: true }), 50);
-          return;
-        }
-        updateAlternativesPanel();
-        updateRouteToast();
-      }
-
-      function onRouteRequestFail(event) {
-        const error = event && event.get('error');
-        const message = (error && (error.message || error.text)) ? error.message || error.text : 'Маршрут не построен';
-        showToast(message, 'error', 6000);
-        clearRouteToast();
-        ui.alternativesList.innerHTML = '<div style="opacity:0.6;">Нет доступных альтернатив</div>';
-      }
-
-      function onActiveRouteChange() {
-        updateAlternativesPanel();
-        updateRouteToast();
-      }
-
-      function getReferenceCoordinates() {
-        if (!state.multiRoute) {
-          return [];
-        }
-        const points = state.multiRoute.model.getReferencePoints();
-        if (!points) {
-          return [];
-        }
-        return points.map((item) => {
-          if (!item) {
-            return null;
-          }
-          if (Array.isArray(item)) {
-            return item;
-          }
-          if (typeof item === 'object' && item.point) {
-            return item.point;
-          }
-          return null;
-        }).filter(Boolean);
-      }
-
-      function analyzeFramesForDetour() {
-        if (!state.framesData.length || !state.multiRoute) {
-          return false;
-        }
-        const referenceCoords = getReferenceCoordinates();
-        if (referenceCoords.length < 2) {
-          return false;
-        }
-        const framesToCheck = state.framesData;
-        for (let refIndex = 0; refIndex < referenceCoords.length; refIndex++) {
-          const refCoord = referenceCoords[refIndex];
-          for (let i = 0; i < framesToCheck.length; i++) {
-            const frame = framesToCheck[i];
-            if (state.detourFrames.has(frame.id)) {
-              continue;
-            }
-            const distance = getDistance(refCoord, frame.coords);
-            if (distance <= 100) {
-              const neighbor = referenceCoords[refIndex + 1] || referenceCoords[refIndex - 1];
-              if (!neighbor) {
-                continue;
-              }
-              const detourCoord = calculateDetourCoordinate(refCoord, neighbor, frame.coords);
-              if (!detourCoord) {
-                continue;
-              }
-              const insertIndex = Math.min(state.viaPoints.length, refIndex);
-              state.viaPoints.splice(insertIndex, 0, {
-                coords: detourCoord,
-                kind: 'detour',
-                frameId: frame.id
-              });
-              state.detourFrames.add(frame.id);
-              showToast(`Объезд весовой рамки у ${frame.name}`, 'warning', 5000);
-              return true;
-            }
-          }
-        }
-        return false;
-      }
-
-      function getDistance(a, b) {
-        if (!a || !b) {
-          return Infinity;
-        }
-        if (ymaps.coordSystem && ymaps.coordSystem.geo && typeof ymaps.coordSystem.geo.getDistance === 'function') {
-          return ymaps.coordSystem.geo.getDistance(a, b);
-        }
-        const result = ymaps.coordSystem.geo.solveInverseProblem(a, b);
-        return result ? result.distance : Infinity;
-      }
-
-      function calculateDetourCoordinate(from, to, frameCoord) {
-        try {
-          const inverse = ymaps.coordSystem.geo.solveInverseProblem(from, to);
-          if (!inverse || typeof inverse.azimuth !== 'number') {
-            return null;
-          }
-          const azimuth = inverse.azimuth;
-          const options = [azimuth + Math.PI / 2, azimuth - Math.PI / 2];
-          let bestCoord = null;
-          let bestDistance = -Infinity;
-          options.forEach((angle) => {
-            const direct = ymaps.coordSystem.geo.solveDirectProblem(from, angle, 200);
-            if (direct && Array.isArray(direct.coordinates)) {
-              const dist = getDistance(direct.coordinates, frameCoord);
-              if (dist > bestDistance) {
-                bestDistance = dist;
-                bestCoord = direct.coordinates;
-              }
-            }
-          });
-          return bestCoord;
-        } catch (error) {
-          console.error('Detour calculation error', error);
-          return null;
-        }
-      }
-
-      function updateAlternativesPanel() {
-        if (!state.multiRoute) {
-          ui.alternativesList.innerHTML = '';
-          return;
-        }
-        const routes = [];
-        state.multiRoute.getRoutes().each((route, index) => {
-          routes.push({ route, index });
-        });
-        if (!routes.length) {
-          ui.alternativesList.innerHTML = '<div style="opacity:0.6;">Нет альтернатив</div>';
-          return;
-        }
-        const activeRoute = state.multiRoute.getActiveRoute();
-        ui.alternativesList.innerHTML = '';
-        routes.forEach(({ route, index }) => {
-          const card = document.createElement('div');
-          card.className = 'alternative-card';
-          if (route === activeRoute) {
-            card.classList.add('active');
-          }
-          const title = document.createElement('div');
-          title.className = 'alternative-title';
-          title.innerHTML = `<span>Маршрут ${index + 1}</span>`;
-          const badge = document.createElement('span');
-          badge.className = 'badge ' + (route === activeRoute ? 'badge-active' : 'badge-alt');
-          badge.textContent = route === activeRoute ? 'активный' : 'альтернатива';
-          title.appendChild(badge);
-
-          const meta = document.createElement('div');
-          meta.className = 'alternative-meta';
-          const distanceText = route.properties.get('distance') && route.properties.get('distance').text;
-          const timeText = route.properties.get('time') && route.properties.get('time').text;
-          meta.innerHTML = `<span>${distanceText || '—'}</span><span>${timeText || '—'}</span>`;
-
-          card.appendChild(title);
-          card.appendChild(meta);
-
-          card.addEventListener('click', () => {
-            if (route !== activeRoute) {
-              state.multiRoute.setActiveRoute(route);
-            }
-          });
-
-          ui.alternativesList.appendChild(card);
+      if(Array.isArray(data.features)){
+        data.features = data.features.filter(f=>f?.geometry?.type==='Point');
+        data.features.forEach(f=>{
+          const [lon,lat] = f.geometry.coordinates;
+          const p = f.properties||{};
+          framePoints.push({lat,lng:lon,name:p.name||'Рамка'});
+          const name = p.name || 'Весовая рамка';
+          const comment = p.comment ? `<div style="margin-top:6px">${escapeHtml(p.comment)}</div>` : '';
+          const date = p.date ? `<div class="small" style="margin-top:6px;color:#9aa3b2">Дата: ${escapeHtml(p.date)}</div>` : '';
+          f.properties = { hintContent:name, balloonContent:`<div style="min-width:220px"><b>${escapeHtml(name)}</b>${comment}${date}</div>` };
         });
       }
 
-      const toastStore = new Map();
+      objectManager.add(data);
+      map.geoObjects.add(objectManager);
+      toast(`Загружено рамок: ${framePoints.length}`, 2500);
+    }catch(e){ console.warn(e); toast('Не удалось загрузить весовые рамки.', 4000); }
+  }
 
-      function showToast(message, type = 'info', duration = 4000, key) {
-        if (!ui.toastContainer) {
-          return;
-        }
-        const className = `toast toast--${type}`;
-        let toastEl;
-        if (key && toastStore.has(key)) {
-          toastEl = toastStore.get(key);
-          toastEl.className = className;
-          toastEl.textContent = message;
-        } else {
-          toastEl = document.createElement('div');
-          toastEl.className = className;
-          toastEl.textContent = message;
-          toastEl.addEventListener('click', () => {
-            removeToast(toastEl, key);
-          });
-          ui.toastContainer.appendChild(toastEl);
-          if (key) {
-            toastStore.set(key, toastEl);
-          }
-        }
-        if (duration && duration > 0) {
-          if (toastEl.toastTimeout) {
-            clearTimeout(toastEl.toastTimeout);
-          }
-          toastEl.toastTimeout = setTimeout(() => removeToast(toastEl, key), duration);
-        } else if (toastEl.toastTimeout) {
-          clearTimeout(toastEl.toastTimeout);
-          toastEl.toastTimeout = null;
-        }
-        return toastEl;
-      }
-
-      function removeToast(toastEl, key) {
-        if (toastEl.toastTimeout) {
-          clearTimeout(toastEl.toastTimeout);
-        }
-        if (toastEl.parentNode) {
-          toastEl.parentNode.removeChild(toastEl);
-        }
-        if (key && toastStore.has(key)) {
-          toastStore.delete(key);
-        }
-      }
-
-      function updateRouteToast() {
-        if (!state.multiRoute) {
-          clearRouteToast();
-          return;
-        }
-        const activeRoute = state.multiRoute.getActiveRoute();
-        if (!activeRoute) {
-          clearRouteToast();
-          return;
-        }
-        const distance = activeRoute.properties.get('distance');
-        const time = activeRoute.properties.get('time');
-        const distanceText = distance ? distance.text : '—';
-        const timeText = time ? time.text : '—';
-        const label = getTransportLabel(state.transportMode);
-        showToast(`${label}: ${distanceText} • ${timeText}`, 'success', 0, 'route-status');
-      }
-
-      function clearRouteToast() {
-        if (toastStore.has('route-status')) {
-          const toastEl = toastStore.get('route-status');
-          removeToast(toastEl, 'route-status');
-        }
-      }
-    })();
-  </script>
+  const escapeHtml = s => String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+})();
+</script>
 </body>
 </html>
