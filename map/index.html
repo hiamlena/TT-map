@@ -3,137 +3,489 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>Trans-Time — Маршрут для грузовиков</title>
+<title>Trans-Time • Маршрут для грузовиков</title>
 <style>
 :root {
+  color-scheme: dark;
   --bg:#0f1115;
   --panel:#151822;
-  --muted:#8892a6;
+  --panel-soft:rgba(21,24,34,.92);
   --text:#e6eaf2;
+  --muted:#8d96aa;
   --accent:#e11d2e;
+  --frame:#60a5fa;
+  --alt:#f59e0b;
+  --success:#22c55e;
   --stroke:#232836;
   --btn:#1b2030;
-  --btn-h:#232a36;
-  --success:#22c55e;
-  --alt:#f59e0b;
-  --frame:#60a5fa;
+  --btn-hover:#232a36;
+  --btn-active:#2a3142;
+  --shadow:0 18px 48px rgba(0,0,0,.45);
+  --radius-lg:16px;
+  --radius-md:12px;
+  --radius-sm:10px;
+  --header-height:88px;
+  --page-pad:clamp(16px,4vw,32px);
+  --content-gap:clamp(18px,4vw,32px);
 }
 * { box-sizing:border-box; }
-html,body { height:100%; margin:0; background:var(--bg); color:var(--text); font:14px/1.45 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; }
-body { display:flex; flex-direction:column; }
-#app { display:grid; grid-template-rows:auto 1fr; min-height:100vh; }
-header { position:sticky; top:0; z-index:10; background:linear-gradient(180deg,var(--panel),rgba(21,24,34,.86)); border-bottom:1px solid var(--stroke); backdrop-filter:blur(6px); }
-.bar { max-width:1200px; margin:8px auto; padding:8px 12px 12px; display:grid; gap:8px; grid-template-columns:auto 1fr auto; align-items:center; }
-.brand { display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.3px; font-size:16px; }
-.brand img { width:28px; height:28px; }
-.small { font-size:12px; color:var(--muted); }
-.panel-grid { width:100%; display:grid; gap:8px; grid-template-columns:1fr 1fr; }
-.field { display:flex; flex-direction:column; gap:6px; padding:10px 12px; border-radius:12px; background:var(--btn); border:1px solid var(--stroke); box-shadow:inset 0 0 0 1px rgba(255,255,255,.02); }
-.field-label { text-transform:uppercase; font-size:11px; letter-spacing:.08em; color:var(--muted); }
-.field-main { display:flex; align-items:center; gap:8px; }
-.field.has-action .field-main { flex-wrap:wrap; }
-.field.has-action .locateBtn { flex-shrink:0; }
-.field input { flex:1; border:0; outline:none; font:14px/1.2 inherit; color:var(--text); background:transparent; }
+html,body { height:100%; margin:0; }
+body {
+  background:var(--bg);
+  color:var(--text);
+  font:14px/1.45 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+a { color:inherit; }
+button,input { font:inherit; color:inherit; }
+button { cursor:pointer; }
+body.is-grabbing, body.is-grabbing * { cursor:grabbing!important; }
+#app { display:flex; flex-direction:column; flex:1; min-height:0; }
+header {
+  position:sticky;
+  top:0;
+  z-index:20;
+  background:linear-gradient(180deg,rgba(21,24,34,.98),rgba(15,17,21,.88));
+  border-bottom:1px solid var(--stroke);
+  backdrop-filter:blur(10px);
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
+}
+.bar {
+  max-width:1280px;
+  margin:0 auto;
+  padding:18px clamp(16px,3vw,32px) 20px;
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+.bar-top {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.brand {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  font-weight:600;
+  letter-spacing:.02em;
+  font-size:17px;
+}
+.brand img { width:32px; height:32px; }
+.brand span { white-space:nowrap; }
+.small-note { color:var(--muted); font-size:12px; }
+.controls { display:flex; flex-direction:column; gap:14px; }
+.fields {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.field {
+  background:var(--btn);
+  border:1px solid var(--stroke);
+  border-radius:var(--radius-lg);
+  padding:10px 14px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:0;
+}
+.field label {
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.09em;
+  color:var(--muted);
+}
+.field .input-wrap {
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.field input {
+  flex:1;
+  border:0;
+  background:transparent;
+  min-height:44px;
+  padding:0;
+  outline:none;
+}
 .field input::placeholder { color:rgba(230,234,242,.55); }
-.locateBtn { white-space:nowrap; border:1px solid var(--stroke); border-radius:10px; padding:8px 12px; background:var(--btn-h); color:var(--text); font-weight:600; font-size:13px; cursor:pointer; transition:background .2s ease, color .2s ease; }
-.locateBtn:hover,.locateBtn:focus-visible { background:var(--accent); color:#fff; outline:none; }
-.locateBtn:disabled { opacity:.6; cursor:progress; }
-.row2 { display:flex; gap:8px; align-items:center; grid-column:1/-1; flex-wrap:wrap; }
-#vehicleGroup { display:flex; gap:8px; flex-wrap:wrap; }
-.btnGroup { display:flex; gap:8px; }
-.pill { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:999px; background:var(--btn); border:1px solid var(--stroke); cursor:pointer; user-select:none; transition:border-color .2s, background-color .2s, color .2s; }
+.field input:focus-visible { outline:none; }
+.veh-actions {
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  align-items:stretch;
+}
+#vehicleGroup {
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.pill {
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 16px;
+  border-radius:999px;
+  border:1px solid var(--stroke);
+  background:var(--btn);
+  font-weight:600;
+  letter-spacing:.01em;
+  transition:background .2s ease,border-color .2s ease,color .2s ease;
+}
 .pill input { display:none; }
-.pill.active { border-color:var(--accent); background:var(--btn-h); color:#fff; }
-.btn { border:0; border-radius:12px; padding:11px 16px; font-weight:600; cursor:pointer; transition:background .2s, transform .2s; }
-.btn.primary { background:var(--accent); color:#fff; }
-.btn.secondary { background:var(--btn); color:var(--text); border:1px solid var(--stroke); }
-.btn:disabled { opacity:.5; cursor:not-allowed; }
-.btn:not(:disabled):active { transform:translateY(1px); }
-main { position:relative; }
-#map { width:100%; height:100%; min-height:calc(100vh - 160px); background:#000; }
-.legend { position:absolute; left:16px; bottom:16px; z-index:4; background:rgba(21,24,34,.92); border:1px solid var(--stroke); border-radius:14px; padding:10px 14px; display:flex; gap:12px; align-items:center; box-shadow:0 12px 40px rgba(0,0,0,.45); }
-.legend .item { display:flex; align-items:center; gap:8px; }
-.legend .dot { width:12px; height:12px; border-radius:50%; }
-#routeList { position:absolute; right:16px; top:120px; z-index:5; min-width:240px; max-width:320px; max-height:calc(100vh - 200px); overflow-y:auto; display:none; background:rgba(21,24,34,.94); border:1px solid var(--stroke); border-radius:14px; padding:10px; box-shadow:0 18px 48px rgba(0,0,0,.45); backdrop-filter:blur(6px); }
-.routeItem { padding:10px; border-radius:12px; border:1px solid transparent; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:background .2s, border-color .2s; }
-.routeItem:hover { background:var(--btn); }
-.routeItem.active { border-color:var(--accent); background:rgba(225,29,46,.12); }
+.pill.active { background:var(--btn-hover); border-color:var(--accent); color:#fff; }
+.actions {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  grid-auto-rows:minmax(48px,auto);
+  gap:10px;
+  flex:1;
+  position:relative;
+}
+.actions button {
+  min-height:48px;
+  border-radius:var(--radius-md);
+  border:1px solid transparent;
+  background:var(--btn);
+  color:var(--text);
+  font-weight:600;
+  letter-spacing:.01em;
+  transition:background .18s ease,border-color .18s ease,transform .18s ease,color .18s ease;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:0 16px;
+  text-align:center;
+}
+.actions button.primary {
+  background:var(--accent);
+  border-color:var(--accent);
+  color:#fff;
+}
+.actions button.secondary {
+  border-color:var(--stroke);
+}
+.actions button:hover:not(:disabled),
+.actions button:focus-visible {
+  background:var(--btn-hover);
+  border-color:rgba(225,29,46,.45);
+  outline:none;
+}
+.actions button.primary:hover:not(:disabled),
+.actions button.primary:focus-visible {
+  background:#f02c3e;
+  border-color:#f02c3e;
+}
+.actions button:active:not(:disabled) { transform:translateY(1px); }
+.actions button:disabled { opacity:.55; cursor:not-allowed; }
+.actions button .icon {
+  font-size:18px;
+  line-height:1;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:1.4em;
+}
+.actions button .label {
+  white-space:nowrap;
+}
+.actions button.is-busy .icon {
+  opacity:.8;
+}
+.actions button.is-busy {
+  cursor:wait;
+}
+button:focus-visible,
+input:focus-visible {
+  outline:2px solid rgba(96,165,250,.45);
+  outline-offset:2px;
+}
+.options-panel {
+  position:absolute;
+  right:0;
+  top:calc(100% + 12px);
+  padding:14px 16px;
+  background:var(--panel-soft);
+  border:1px solid var(--stroke);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow);
+  min-width:220px;
+  display:none;
+  flex-direction:column;
+  gap:12px;
+  z-index:30;
+}
+.options-panel.show { display:flex; animation:fadeSlide .22s ease-out; }
+.option-item {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  font-size:13px;
+}
+.option-item input[type="checkbox"] {
+  appearance:none;
+  width:20px;
+  height:20px;
+  border-radius:6px;
+  border:1px solid var(--stroke);
+  background:var(--btn);
+  position:relative;
+  transition:background .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+.option-item input[type="checkbox"]:checked {
+  background:var(--accent);
+  border-color:var(--accent);
+}
+.option-item input[type="checkbox"]:checked::after {
+  content:"";
+  position:absolute;
+  left:4px;
+  top:2px;
+  width:10px;
+  height:14px;
+  border:2px solid #fff;
+  border-top:0;
+  border-left:0;
+  transform:rotate(45deg);
+}
+.option-item input[type="checkbox"]:focus-visible {
+  outline:2px solid rgba(96,165,250,.6);
+  outline-offset:2px;
+}
+main {
+  flex:1;
+  position:relative;
+  min-height:calc(100vh - var(--header-height));
+  overflow:hidden;
+  padding:var(--content-gap) var(--page-pad) var(--page-pad);
+}
+@media (min-width:1200px) {
+  main { min-height:0; }
+}
+#map {
+  position:absolute;
+  inset:0;
+  background:#050608;
+  cursor:grab;
+  border-radius:var(--radius-lg);
+  border:1px solid var(--stroke);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+#routeList {
+  position:absolute;
+  right:var(--page-pad);
+  top:var(--content-gap);
+  min-width:240px;
+  max-width:320px;
+  max-height:calc(100vh - var(--header-height) - var(--content-gap) - var(--page-pad));
+  overflow-y:auto;
+  padding:14px 16px;
+  border-radius:var(--radius-lg);
+  border:1px solid var(--stroke);
+  background:var(--panel-soft);
+  box-shadow:var(--shadow);
+  display:none;
+  backdrop-filter:blur(10px);
+  z-index:15;
+}
+.routeItem {
+  padding:12px;
+  border-radius:var(--radius-md);
+  border:1px solid transparent;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  transition:background .18s ease,border-color .18s ease;
+}
+.routeItem:hover,
+.routeItem:focus-visible {
+  background:var(--btn);
+  outline:none;
+}
+.routeItem.active {
+  border-color:var(--accent);
+  background:rgba(225,29,46,.14);
+}
 .routeItem .title { font-weight:600; }
-.routeItem .meta { font-size:12px; color:var(--muted); }
-#toast { position:fixed; right:18px; bottom:18px; z-index:20; padding:12px 16px; border-radius:14px; border:1px solid var(--stroke); background:rgba(21,24,34,.94); box-shadow:0 18px 48px rgba(0,0,0,.45); display:flex; gap:10px; align-items:flex-start; opacity:0; pointer-events:none; transform:translateY(12px); transition:opacity .3s ease, transform .3s ease; max-width:320px; }
-#toast.show { opacity:1; pointer-events:auto; transform:translateY(0); }
-@media (max-width:1100px) {
-  .bar { grid-template-columns:1fr 1fr; }
-  .bar .small:last-child { text-align:left; }
-  #routeList { top:132px; }
+.routeItem .meta { color:var(--muted); font-size:12px; }
+.legend {
+  position:absolute;
+  left:var(--page-pad);
+  bottom:var(--page-pad);
+  display:flex;
+  gap:16px;
+  align-items:center;
+  padding:12px 16px;
+  border-radius:var(--radius-lg);
+  border:1px solid var(--stroke);
+  background:var(--panel-soft);
+  box-shadow:var(--shadow);
+  font-size:13px;
+  z-index:12;
 }
+.legend .item { display:flex; align-items:center; gap:8px; white-space:nowrap; }
+.legend .dot {
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  box-shadow:0 0 0 1px rgba(0,0,0,.35);
+}
+#toast {
+  position:fixed;
+  right:var(--page-pad);
+  bottom:var(--page-pad);
+  padding:14px 18px;
+  border-radius:var(--radius-lg);
+  border:1px solid var(--stroke);
+  background:var(--panel-soft);
+  color:var(--text);
+  box-shadow:var(--shadow);
+  max-width:360px;
+  display:flex;
+  gap:12px;
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(16px);
+  transition:opacity .24s ease, transform .24s ease;
+  z-index:40;
+}
+#toast.show {
+  opacity:1;
+  pointer-events:auto;
+  transform:translateY(0);
+}
+#toast[data-tone="error"] { border-color:#e11d2e; background:rgba(225,29,46,.16); }
+#toast[data-tone="success"] { border-color:#22c55e; background:rgba(34,197,94,.16); }
+#toast[data-tone="warning"] { border-color:#f59e0b; background:rgba(245,158,11,.16); }
+#toast strong { font-weight:600; }
 @media (max-width:900px) {
-  .bar { grid-template-columns:1fr; padding:8px 10px 12px; }
-  .brand { font-size:15px; }
-  .panel-grid { grid-template-columns:1fr; }
-  .field { width:100%; }
-  .row2 { flex-direction:column; align-items:stretch; gap:10px; }
-  #vehicleGroup { width:100%; }
-  .btnGroup { width:100%; display:flex; gap:8px; }
-  .btnGroup .btn { flex:1; }
-  #map { min-height:calc(100vh - 260px); }
-  #routeList { top:auto; right:16px; left:16px; bottom:96px; max-width:none; width:auto; }
-  #routeList::after { content:""; display:block; height:4px; }
-  #toast { left:16px; right:16px; max-width:none; }
-  .legend { left:16px; right:auto; bottom:16px; font-size:12px; flex-wrap:wrap; }
+  .fields { grid-template-columns:1fr; }
+  .veh-actions { flex-direction:column; align-items:stretch; }
+  #vehicleGroup { justify-content:flex-start; }
+  .actions {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-auto-rows:minmax(48px,auto);
+  }
+  #routeList {
+    left:var(--page-pad);
+    right:var(--page-pad);
+    top:auto;
+    bottom:calc(var(--page-pad) + 72px);
+    max-height:45vh;
+  }
+  #toast {
+    left:var(--page-pad);
+    right:var(--page-pad);
+    bottom:var(--page-pad);
+    max-width:none;
+  }
+  .legend {
+    left:var(--page-pad);
+    right:auto;
+    bottom:calc(var(--page-pad) + 12px);
+    flex-wrap:wrap;
+    row-gap:10px;
+  }
 }
+@media (max-width:640px) {
+  .bar { gap:16px; }
+  .actions { grid-template-columns:1fr; }
+  .brand span { font-size:15px; }
+}
+@keyframes fadeSlide {
+  from { opacity:0; transform:translateY(-8px); }
+  to { opacity:1; transform:translateY(0); }
+}
+::-webkit-scrollbar { width:8px; height:8px; }
+::-webkit-scrollbar-thumb { background:rgba(137,148,172,.55); border-radius:999px; }
+::-webkit-scrollbar-track { background:rgba(35,40,54,.6); }
 </style>
-<script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=317aa42d-aa15-4acf-885a-6d6bfddb2339&suggest_apikey=317aa42d-aa15-4acf-885a-6d6bfddb2339"></script>
+<script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=317aa42d-aa15-4acf-885a-6d6bfddb2339&suggest_apikey=317aa42d-aa15-4acf-885a-6d6bfddb2339" defer></script>
 </head>
 <body>
 <div id="app">
   <header>
     <div class="bar">
-      <div class="brand">
-        <img src="../assets/logo-tt.svg" alt="Trans-Time" loading="lazy"/>
-        <span>Trans-Time • Маршрут для грузовиков</span>
+      <div class="bar-top">
+        <div class="brand">
+          <img src="../assets/logo-tt.svg" alt="Trans-Time" loading="lazy" width="32" height="32"/>
+          <span>Trans-Time • Маршрут для грузовиков</span>
+        </div>
+        <div class="small-note">Клик по карте — via‑точка • Альтернативы справа/снизу</div>
       </div>
-      <div class="small">Клик по карте → добавляет via‑точку</div>
-      <div class="small" style="text-align:right">Альтернативы справа или снизу</div>
-      <div class="panel-grid">
-        <div class="field has-action">
-          <label class="field-label" for="from">Откуда</label>
-          <div class="field-main">
-            <input id="from" type="text" placeholder="Адрес, населённый пункт" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-            <button id="locateMe" type="button" class="locateBtn">📍 Моё местоположение</button>
+      <div class="controls">
+        <div class="fields">
+          <div class="field">
+            <label for="from">Откуда</label>
+            <div class="input-wrap">
+              <input id="from" type="text" placeholder="Начните вводить адрес" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+            </div>
+          </div>
+          <div class="field">
+            <label for="to">Куда</label>
+            <div class="input-wrap">
+              <input id="to" type="text" placeholder="Начните вводить адрес" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+            </div>
           </div>
         </div>
-        <div class="field">
-          <label class="field-label" for="to">Куда</label>
-          <div class="field-main">
-            <input id="to" type="text" placeholder="Адрес, населённый пункт" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+        <div class="veh-actions">
+          <div id="vehicleGroup" role="radiogroup" aria-label="Тип транспорта">
+            <label class="pill active"><input type="radio" name="veh" value="car" checked>Легковой</label>
+            <label class="pill"><input type="radio" name="veh" value="truck40">≤40 т</label>
+            <label class="pill"><input type="radio" name="veh" value="truckHeavy">&gt;40 т</label>
           </div>
-        </div>
-      </div>
-      <div class="row2">
-        <div id="vehicleGroup">
-          <label class="pill active"><input type="radio" name="veh" value="car" checked>Легковой</label>
-          <label class="pill"><input type="radio" name="veh" value="truck40">Грузовой ≤ 40 т</label>
-          <label class="pill"><input type="radio" name="veh" value="truckHeavy">Грузовой &gt; 40 т</label>
-        </div>
-        <div class="btnGroup" style="margin-left:auto; display:flex; gap:8px;">
-          <button id="buildBtn" class="btn primary">Построить маршрут</button>
-          <button id="clearVia" class="btn secondary">Сбросить via-точки</button>
+          <div class="actions">
+            <button id="swapBtn" type="button" class="secondary" aria-label="Поменять местами точки">
+              <span class="icon" aria-hidden="true">🔄</span>
+              <span class="label">Поменять</span>
+            </button>
+            <button id="geoBtn" type="button" class="secondary" aria-label="Определить моё местоположение">
+              <span class="icon" aria-hidden="true">📍</span>
+              <span class="label">Местоположение</span>
+            </button>
+            <button id="buildBtn" type="button" class="primary">
+              <span class="icon" aria-hidden="true">▶</span>
+              <span class="label">Построить маршрут</span>
+            </button>
+            <button id="clearVia" type="button" class="secondary">
+              <span class="icon" aria-hidden="true">🗑️</span>
+              <span class="label">Сбросить via-точки</span>
+            </button>
+            <button id="optsBtn" type="button" class="secondary" aria-haspopup="true" aria-expanded="false">
+              <span class="icon" aria-hidden="true">☰</span>
+              <span class="label">Опции</span>
+            </button>
+            <div id="optionsPanel" class="options-panel" role="dialog" aria-modal="false" aria-labelledby="optsBtn">
+              <label class="option-item"><input id="toggleFrames" type="checkbox" checked/> Показывать весовые рамки</label>
+              <label class="option-item"><input id="toggleDetour" type="checkbox"/> Авто-объезд рамок</label>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </header>
   <main>
-    <div id="map"></div>
-    <div id="routeList"></div>
+    <div id="map" role="application" aria-label="Карта маршрутов"></div>
+    <div id="routeList" aria-live="polite"></div>
     <div class="legend">
-      <div class="item"><span class="dot" style="background:var(--success);"></span><span class="small" style="color:var(--text);">Активный маршрут</span></div>
-      <div class="item"><span class="dot" style="background:var(--alt);"></span><span class="small" style="color:var(--text);">Альтернативы</span></div>
-      <div class="item"><span class="dot" style="background:var(--frame);"></span><span class="small" style="color:var(--text);">Весовые рамки</span></div>
+      <div class="item"><span class="dot" style="background:var(--success);"></span> Активный маршрут</div>
+      <div class="item"><span class="dot" style="background:var(--alt);"></span> Альтернативы</div>
+      <div class="item"><span class="dot" style="background:var(--frame);"></span> Весовые рамки</div>
     </div>
   </main>
 </div>
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <script>
 (function(){
   'use strict';
@@ -144,39 +496,80 @@ main { position:relative; }
   let framePoints = [];
   let pendingDetours = [];
   let announceDetoursOnce = false;
+  let framesOnMap = false;
+  let optionsOpen = false;
+  let autoDetourEnabled = false;
+  let showFrames = true;
 
-  const $ = (s) => document.querySelector(s);
-  const $$ = (s) => Array.from(document.querySelectorAll(s));
+  const $ = (selector, ctx = document) => ctx.querySelector(selector);
+  const $$ = (selector, ctx = document) => Array.from(ctx.querySelectorAll(selector));
+
   const fromInput = $('#from');
   const toInput = $('#to');
   const routeListEl = $('#routeList');
   const toastEl = $('#toast');
-  const locateBtn = $('#locateMe');
-  const locateBtnLabel = locateBtn ? locateBtn.textContent : '';
+  const locateBtn = $('#geoBtn');
+  const swapBtn = $('#swapBtn');
+  const clearViaBtn = $('#clearVia');
+  const buildBtn = $('#buildBtn');
+  const optionsBtn = $('#optsBtn');
+  const optionsPanel = $('#optionsPanel');
+  const framesCheckbox = $('#toggleFrames');
+  const autoDetourCheckbox = $('#toggleDetour');
+  const headerEl = document.querySelector('header');
+  const locateBtnIcon = locateBtn ? locateBtn.querySelector('.icon') : null;
+  const locateBtnLabel = locateBtn ? locateBtn.querySelector('.label') : null;
+  const locateBtnDefaultIcon = locateBtnIcon ? locateBtnIcon.textContent.trim() : '';
+  const locateBtnDefaultLabel = locateBtnLabel ? locateBtnLabel.textContent.trim() : (locateBtn ? locateBtn.textContent.trim() : '');
+
+  const updateLayoutMetrics = () => {
+    if(!headerEl || !document.documentElement) return;
+    const height = Math.round(headerEl.getBoundingClientRect().height);
+    document.documentElement.style.setProperty('--header-height', `${Math.max(72, height)}px`);
+  };
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(updateLayoutMetrics, 120);
+  }, {passive:true});
+
+  let headerResizeObserver = null;
+  if(typeof ResizeObserver === 'function' && headerEl){
+    headerResizeObserver = new ResizeObserver(() => updateLayoutMetrics());
+    headerResizeObserver.observe(headerEl);
+  }
+
+  updateLayoutMetrics();
 
   const notifications = (() => {
     const queue = [];
     let timer = null;
     let active = false;
+
     const schedule = () => {
       if(!queue.length){
         active = false;
         toastEl.classList.remove('show');
+        toastEl.dataset.tone = 'info';
         return;
       }
       active = true;
-      const {html, ms} = queue.shift();
+      const {html, ms, tone} = queue.shift();
       toastEl.innerHTML = html;
+      toastEl.dataset.tone = tone || 'info';
       toastEl.classList.add('show');
       clearTimeout(timer);
       timer = setTimeout(() => {
         toastEl.classList.remove('show');
-        timer = setTimeout(schedule, 220);
+        timer = setTimeout(schedule, 200);
       }, ms);
     };
+
     return {
-      push(html, ms = 4200){
-        queue.push({html, ms});
+      push(message, ms = 4200, tone = 'info'){
+        const html = typeof message === 'string' ? message : String(message ?? '');
+        queue.push({html, ms, tone});
         if(!active) schedule();
       },
       clear(){
@@ -185,6 +578,7 @@ main { position:relative; }
         timer = null;
         active = false;
         toastEl.classList.remove('show');
+        toastEl.dataset.tone = 'info';
       }
     };
   })();
@@ -222,17 +616,32 @@ main { position:relative; }
     return hours ? `${hours} ч ${minutes} мин` : `${minutes} мин`;
   };
 
-  const escapeHtml = (str) => String(str ?? '').replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
+  const escapeHtml = (str) => String(str ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
 
   const setLocateBusy = (busy) => {
     if(!locateBtn) return;
-    locateBtn.disabled = !!busy;
-    locateBtn.textContent = busy ? 'Определяем…' : locateBtnLabel;
+    const isBusy = !!busy;
+    locateBtn.disabled = isBusy;
+    locateBtn.classList.toggle('is-busy', isBusy);
+    if(locateBtnIcon){
+      locateBtnIcon.textContent = isBusy ? '⏳' : (locateBtnDefaultIcon || '📍');
+    }
+    if(locateBtnLabel){
+      locateBtnLabel.textContent = isBusy ? 'Определяем…' : locateBtnDefaultLabel;
+    } else if(locateBtn){
+      locateBtn.textContent = isBusy ? '⏳ Определяем…' : locateBtnDefaultLabel;
+    }
   };
 
   function locateUser(){
     if(!navigator.geolocation){
-      notifications.push('Геолокация не поддерживается в этом браузере.', 4200);
+      notifications.push('Геолокация не поддерживается в этом браузере.', 4600, 'warning');
       return;
     }
     setLocateBusy(true);
@@ -247,16 +656,16 @@ main { position:relative; }
         const address = geoObject ? (typeof geoObject.getAddressLine === 'function' ? geoObject.getAddressLine() : geoObject.properties.get('text') || geoObject.properties.get('name')) : '';
         if(address){
           fromInput.value = address;
-          notifications.push(`📍 <b>Откуда</b>: ${escapeHtml(address)}`, 5200);
+          notifications.push(`📍 <strong>Откуда:</strong> ${escapeHtml(address)}`, 5600, 'success');
           if(toInput.value.trim()){
             buildRoute();
           }
         } else {
-          notifications.push('Не удалось определить адрес по координатам.', 4800);
+          notifications.push('Не удалось определить адрес по координатам.', 5200, 'error');
         }
       } catch (error) {
         console.warn(error);
-        notifications.push('Не удалось определить адрес по координатам.', 4800);
+        notifications.push('Не удалось определить адрес по координатам.', 5200, 'error');
       } finally {
         setLocateBusy(false);
       }
@@ -269,8 +678,31 @@ main { position:relative; }
         else if(error.code === error.POSITION_UNAVAILABLE){ message = 'Данные геолокации недоступны.'; }
         else if(error.code === error.TIMEOUT){ message = 'Превышено время ожидания геолокации.'; }
       }
-      notifications.push(escapeHtml(message), 4800);
+      notifications.push(escapeHtml(message), 5200, 'error');
     }, { enableHighAccuracy:true, timeout:15000, maximumAge:60000 });
+  }
+
+  function toggleOptions(force){
+    optionsOpen = typeof force === 'boolean' ? force : !optionsOpen;
+    if(optionsPanel){
+      optionsPanel.classList.toggle('show', optionsOpen);
+    }
+    if(optionsBtn){
+      optionsBtn.setAttribute('aria-expanded', optionsOpen ? 'true' : 'false');
+    }
+    updateLayoutMetrics();
+  }
+
+  function applyFrameVisibility(){
+    if(!map || !objectManager) return;
+    if(showFrames && !framesOnMap){
+      map.geoObjects.add(objectManager);
+      framesOnMap = true;
+    }
+    if(!showFrames && framesOnMap){
+      map.geoObjects.remove(objectManager);
+      framesOnMap = false;
+    }
   }
 
   ymaps.ready(init);
@@ -284,18 +716,24 @@ main { position:relative; }
       suppressMapOpenBlock:true
     });
 
-    const suggestFrom = new ymaps.SuggestView('from', {
+    if(map && map.cursors){
+      map.cursors.push('grab');
+    }
+    map.events.add('actionbegin', (e) => {
+      if(e.get('type') === 'drag'){
+        document.body.classList.add('is-grabbing');
+      }
+    });
+    map.events.add('actionend', () => document.body.classList.remove('is-grabbing'));
+    document.addEventListener('mouseup', () => document.body.classList.remove('is-grabbing'));
+
+    const suggestConfig = {
       results:8,
       minChars:1,
-      width:'auto',
-      boundedBy:[[41,19],[82,-170]]
-    });
-    const suggestTo = new ymaps.SuggestView('to', {
-      results:8,
-      minChars:1,
-      width:'auto',
-      boundedBy:[[41,19],[82,-170]]
-    });
+      width:'auto'
+    };
+    const suggestFrom = new ymaps.SuggestView('from', suggestConfig);
+    const suggestTo = new ymaps.SuggestView('to', suggestConfig);
 
     suggestFrom.events.add('select', () => { tryAutoBuild(); });
     suggestTo.events.add('select', () => { tryAutoBuild(); });
@@ -303,7 +741,7 @@ main { position:relative; }
     $$('#vehicleGroup input[name="veh"]').forEach((input) => {
       input.addEventListener('change', () => {
         setActivePill(input.value);
-        if(fromInput.value && toInput.value) {
+        if(fromInput.value.trim() && toInput.value.trim()){
           buildRoute();
         }
       });
@@ -315,44 +753,98 @@ main { position:relative; }
       const label = `${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}`;
       if(window.confirm(`Добавить via-точку?\n${label}`)){
         userViaPoints.push(coords);
-        const mark = new ymaps.Placemark(coords, {hintContent:'via-точка'}, {preset:'islands#blueDotIcon'});
+        const mark = new ymaps.Placemark(coords, {hintContent:'via-точка'}, {preset:'islands#blueCircleIcon', iconColor:'#60a5fa'});
         userViaMarks.push(mark);
         map.geoObjects.add(mark);
-        if(fromInput.value && toInput.value){
+        notifications.push('Добавлена via-точка', 3600, 'success');
+        if(fromInput.value.trim() && toInput.value.trim()){
           buildRoute();
         }
       }
     });
 
-    $('#buildBtn').addEventListener('click', buildRoute);
-
+    if(buildBtn){
+      buildBtn.addEventListener('click', buildRoute);
+    }
     if(locateBtn){
       locateBtn.addEventListener('click', locateUser);
     }
-
-    $('#clearVia').addEventListener('click', () => {
-      userViaPoints.length = 0;
-      while(userViaMarks.length){
-        const placemark = userViaMarks.pop();
-        if(placemark) map.geoObjects.remove(placemark);
+    if(swapBtn){
+      swapBtn.addEventListener('click', () => {
+        const fromVal = fromInput.value;
+        fromInput.value = toInput.value;
+        toInput.value = fromVal;
+        if(fromInput.value.trim() && toInput.value.trim()){
+          buildRoute();
+        }
+      });
+    }
+    if(clearViaBtn){
+      clearViaBtn.addEventListener('click', () => {
+        userViaPoints.length = 0;
+        while(userViaMarks.length){
+          const placemark = userViaMarks.pop();
+          if(placemark){
+            map.geoObjects.remove(placemark);
+          }
+        }
+        notifications.push('Via-точки очищены', 3200, 'info');
+        if(multiRoute){
+          buildRoute();
+        }
+      });
+    }
+    if(optionsBtn){
+      optionsBtn.addEventListener('click', () => {
+        toggleOptions();
+      });
+    }
+    document.addEventListener('click', (event) => {
+      if(!optionsOpen) return;
+      const clickInsidePanel = optionsPanel && optionsPanel.contains(event.target);
+      const clickOnButton = optionsBtn && optionsBtn.contains(event.target);
+      if(clickInsidePanel || clickOnButton) return;
+      toggleOptions(false);
+    }, true);
+    document.addEventListener('keydown', (event) => {
+      if(event.key === 'Escape' && optionsOpen){
+        toggleOptions(false);
       }
-      notifications.push('Via-точки очищены');
-      if(multiRoute) buildRoute();
     });
+    if(framesCheckbox){
+      framesCheckbox.addEventListener('change', () => {
+        showFrames = framesCheckbox.checked;
+        applyFrameVisibility();
+        notifications.push(showFrames ? 'Весовые рамки отображаются.' : 'Весовые рамки скрыты.', 3200, 'info');
+      });
+    }
+    if(autoDetourCheckbox){
+      autoDetourCheckbox.addEventListener('change', () => {
+        autoDetourEnabled = autoDetourCheckbox.checked;
+        notifications.push(autoDetourEnabled ? 'Авто-объезд рамок включён.' : 'Авто-объезд рамок выключен.', 3400, autoDetourEnabled ? 'success' : 'info');
+        if(autoDetourEnabled && getVehicleValue() === 'car'){
+          notifications.push('Авто-объезд работает только для грузового транспорта.', 4200, 'warning');
+        }
+        if(fromInput.value.trim() && toInput.value.trim()){
+          buildRoute();
+        }
+      });
+    }
 
     ['from','to'].forEach((id) => {
-      document.getElementById(id).addEventListener('keydown', (e) => {
-        if(e.key === 'Enter'){
-          e.preventDefault();
+      const input = document.getElementById(id);
+      input.addEventListener('keydown', (event) => {
+        if(event.key === 'Enter'){
+          event.preventDefault();
           buildRoute();
         }
       });
     });
 
     function tryAutoBuild(){
-      const a = document.getElementById('from').value.trim();
-      const b = document.getElementById('to').value.trim();
-      if(a && b) buildRoute();
+      if(fromInput.value.trim() && toInput.value.trim()){
+        buildRoute();
+      }
     }
 
     loadFrames();
@@ -371,7 +863,7 @@ main { position:relative; }
     const toValue = toInput.value.trim();
     if(!fromValue || !toValue){
       notifications.clear();
-      notifications.push('Укажи <b>Откуда</b> и <b>Куда</b>.');
+      notifications.push('Укажи <strong>Откуда</strong> и <strong>Куда</strong>.', 4400, 'warning');
       return;
     }
 
@@ -386,7 +878,7 @@ main { position:relative; }
       pendingDetours = [];
       announceDetoursOnce = false;
 
-      if(framePoints.length && getVehicleValue() !== 'car' && referencePoints.length >= 2){
+      if(autoDetourEnabled && framePoints.length && getVehicleValue() !== 'car' && referencePoints.length >= 2){
         const augmented = injectDetours(referencePoints.slice());
         referencePoints = augmented.points;
         pendingDetours = augmented.names;
@@ -410,7 +902,7 @@ main { position:relative; }
           routeStrokeOpacity:0.6,
           routeStrokeColor:'#f59e0b',
           wayPointStartIconFillColor:'#22c55e',
-          wayPointFinishIconFillColor:'#ef4444',
+          wayPointFinishIconFillColor:'#e11d2e',
           viaPointIconFillColor:'#60a5fa',
           wayPointDraggable:false
         });
@@ -419,19 +911,19 @@ main { position:relative; }
         multiRoute.events.add('activeroutechange', updateUI);
         multiRoute.model.events.add('requestfail', () => {
           notifications.clear();
-          notifications.push('Маршрут не построен. Проверь адреса и тип транспорта.', 5200);
+          notifications.push('Маршрут не построен. Проверь адреса и тип транспорта.', 5200, 'error');
         });
       } else {
         multiRoute.model.setReferencePoints(referencePoints);
         multiRoute.model.setParams(params, true);
       }
 
-      routeListEl.innerHTML = '<div class="small">Строим маршрут…</div>';
+      routeListEl.innerHTML = '<div class="small-note">Строим маршрут…</div>';
       routeListEl.style.display = 'block';
     } catch (error) {
       console.warn(error);
       notifications.clear();
-      notifications.push('Не удалось построить маршрут. Проверь адреса.', 5200);
+      notifications.push('Не удалось построить маршрут. Проверь адреса.', 5200, 'error');
     }
   }
 
@@ -503,18 +995,18 @@ main { position:relative; }
     const routes = multiRoute.getRoutes();
     if(!routes || routes.getLength() === 0){
       routeListEl.style.display = 'none';
-      notifications.push('Маршрут не найден.', 3800);
+      notifications.push('Маршрут не найден.', 3800, 'warning');
       return;
     }
 
     const activeRoute = multiRoute.getActiveRoute();
     if(activeRoute){
       const props = activeRoute.properties.getAll();
-      notifications.push(`<b>Активный маршрут:</b> ${fmtDist(props?.distance?.value)} • ${fmtTime(props?.duration?.value)}`, 6200);
+      notifications.push(`<strong>Активный маршрут:</strong> ${fmtDist(props?.distance?.value)} • ${fmtTime(props?.duration?.value)}`, 6200, 'info');
       if(announceDetoursOnce && pendingDetours.length){
         const uniqueNames = [...new Set(pendingDetours)].filter(Boolean);
         uniqueNames.forEach((name) => {
-          notifications.push(`Объезд весовой рамки у ${escapeHtml(name)}`, 3600);
+          notifications.push(`Объезд весовой рамки у ${escapeHtml(name)}`, 3800, 'warning');
         });
         pendingDetours = [];
         announceDetoursOnce = false;
@@ -522,15 +1014,27 @@ main { position:relative; }
     }
 
     routeListEl.innerHTML = '';
-    for(let i = 0; i < routes.getLength(); i++){
+    const length = routes.getLength();
+    for(let i = 0; i < length; i++){
       const route = routes.get(i);
       const props = route.properties.getAll();
       const item = document.createElement('div');
-      item.className = 'routeItem' + (route === activeRoute ? ' active' : '');
+      const isActive = route === activeRoute;
+      item.className = 'routeItem' + (isActive ? ' active' : '');
+      item.setAttribute('role', 'button');
+      item.setAttribute('tabindex', '0');
+      item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
       item.innerHTML = `<div class="title">Вариант ${i + 1}</div><div class="meta">${fmtDist(props?.distance?.value)} • ${fmtTime(props?.duration?.value)}</div>`;
-      item.addEventListener('click', () => {
+      const activate = () => {
         multiRoute.setActiveRoute(route);
         updateUI();
+      };
+      item.addEventListener('click', activate);
+      item.addEventListener('keydown', (event) => {
+        if(event.key === 'Enter' || event.key === ' '){
+          event.preventDefault();
+          activate();
+        }
       });
       routeListEl.appendChild(item);
     }
@@ -543,8 +1047,11 @@ main { position:relative; }
       if(!response.ok) throw new Error('frames_ready.geojson not found');
       const data = await response.json();
 
+      if(objectManager && framesOnMap && map){
+        map.geoObjects.remove(objectManager);
+      }
       objectManager = new ymaps.ObjectManager({clusterize:false, geoObjectOpenBalloonOnClick:true});
-      objectManager.objects.options.set({preset:'islands#blueCircleDotIcon'});
+      objectManager.objects.options.set({preset:'islands#blueCircleDotIcon', iconColor:'#60a5fa'});
 
       framePoints = [];
       if(Array.isArray(data?.features)){
@@ -556,10 +1063,10 @@ main { position:relative; }
           const props = feature.properties || {};
           const name = props.name || props.title || props.id || `Рамка №${idx + 1}`;
           const comment = props.comment ? `<div style="margin-top:6px">${escapeHtml(props.comment)}</div>` : '';
-          const date = props.date ? `<div class="small" style="margin-top:6px;color:#9aa3b2">Дата: ${escapeHtml(props.date)}</div>` : '';
+          const date = props.date ? `<div class="small-note" style="margin-top:6px;color:#9aa3b2">Дата: ${escapeHtml(props.date)}</div>` : '';
           feature.properties = {
-            hintContent: name,
-            balloonContent: `<div style="min-width:220px"><b>${escapeHtml(name)}</b>${comment}${date}</div>`
+            hintContent:name,
+            balloonContent:`<div style="min-width:220px"><strong>${escapeHtml(name)}</strong>${comment}${date}</div>`
           };
           features.push(feature);
           framePoints.push({coords:[lat, lon], name});
@@ -567,11 +1074,17 @@ main { position:relative; }
         objectManager.add({type:'FeatureCollection', features});
       }
 
-      if(objectManager) map.geoObjects.add(objectManager);
-      notifications.push(`Загружено рамок: ${framePoints.length}`, 3200);
+      framesOnMap = false;
+      applyFrameVisibility();
+
+      if(framePoints.length){
+        notifications.push(`Загружено рамок: ${framePoints.length}`, 3200, 'info');
+      } else {
+        notifications.push('Нет точек рамок.', 3600, 'warning');
+      }
     } catch (error) {
       console.warn(error);
-      notifications.push('Не удалось загрузить весовые рамки.', 4800);
+      notifications.push('Не удалось загрузить весовые рамки.', 4800, 'error');
     }
   }
 })();
