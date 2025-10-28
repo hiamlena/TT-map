@@ -637,7 +637,13 @@ main {
     }
   }
 
-  ymaps.ready(init);
+  (function waitYmaps(){
+    if(window.ymaps && ymaps.ready){
+      ymaps.ready(init);
+    } else {
+      setTimeout(waitYmaps, 150);
+    }
+  })();
 
   function init(){
     map = new ymaps.Map('map', {
@@ -843,7 +849,7 @@ main {
         multiRoute.events.add('activeroutechange', updateUI);
         multiRoute.model.events.add('requestfail', () => {
           notifications.clear();
-          notifications.push('Маршрут не построен. Проверь адреса и тип транспорта.', 5200, 'error');
+          notifications.push('Не удалось построить маршрут', 5200, 'error');
         });
       } else {
         multiRoute.model.setReferencePoints(referencePoints);
@@ -855,7 +861,7 @@ main {
     } catch (error) {
       console.warn(error);
       notifications.clear();
-      notifications.push('Не удалось построить маршрут. Проверь адреса.', 5200, 'error');
+      notifications.push('Не удалось построить маршрут', 5200, 'error');
     }
   }
 
@@ -934,7 +940,7 @@ main {
     const activeRoute = multiRoute.getActiveRoute();
     if(activeRoute){
       const props = activeRoute.properties.getAll();
-      notifications.push(`<strong>Активный маршрут:</strong> ${fmtDist(props?.distance?.value)} • ${fmtTime(props?.duration?.value)}`, 6200, 'info');
+      notifications.push(`<strong>Маршрут:</strong> ${fmtDist(props?.distance?.value)} • ${fmtTime(props?.duration?.value)}`, 6200, 'success');
       if(announceDetoursOnce && pendingDetours.length){
         const uniqueNames = [...new Set(pendingDetours)].filter(Boolean);
         uniqueNames.forEach((name) => {
@@ -1010,7 +1016,7 @@ main {
       applyFrameVisibility();
 
       if(framePoints.length){
-        notifications.push(`Загружено рамок: ${framePoints.length}`, 3200, 'info');
+        notifications.push(`Загружено ${framePoints.length} рамок`, 3200, 'success');
       } else {
         notifications.push('Нет точек рамок.', 3600, 'warning');
       }
