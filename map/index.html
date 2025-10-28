@@ -90,8 +90,8 @@ main { position:relative; }
       <div class="small">Клик по карте → добавляет via‑точку</div>
       <div class="small" style="text-align:right">Альтернативы справа или снизу</div>
       <div class="panel-grid">
-        <label class="field" for="from"><span>Откуда</span><input id="from" type="text" placeholder="Адрес, город" autocomplete="off"/></label>
-        <label class="field" for="to"><span>Куда</span><input id="to" type="text" placeholder="Адрес, город" autocomplete="off"/></label>
+        <label class="field" for="from"><span>Откуда</span><input id="from" type="text" placeholder="Адрес, населённый пункт" autocomplete="off" autocapitalize="off" spellcheck="false"/></label>
+        <label class="field" for="to"><span>Куда</span><input id="to" type="text" placeholder="Адрес, населённый пункт" autocomplete="off" autocapitalize="off" spellcheck="false"/></label>
       </div>
       <div class="row2">
         <div id="vehicleGroup">
@@ -216,8 +216,21 @@ main { position:relative; }
       suppressMapOpenBlock:true
     });
 
-    new ymaps.SuggestView('from', {results:8, width:'auto'});
-    new ymaps.SuggestView('to', {results:8, width:'auto'});
+    const suggestFrom = new ymaps.SuggestView('from', {
+      results:8,
+      minChars:1,
+      width:'auto',
+      boundedBy:[[41,19],[82,-170]]
+    });
+    const suggestTo = new ymaps.SuggestView('to', {
+      results:8,
+      minChars:1,
+      width:'auto',
+      boundedBy:[[41,19],[82,-170]]
+    });
+
+    suggestFrom.events.add('select', () => { tryAutoBuild(); });
+    suggestTo.events.add('select', () => { tryAutoBuild(); });
 
     $$('#vehicleGroup input[name="veh"]').forEach((input) => {
       input.addEventListener('change', () => {
@@ -256,14 +269,19 @@ main { position:relative; }
     });
 
     ['from','to'].forEach((id) => {
-      const input = $('#'+id);
-      input.addEventListener('keydown', (e) => {
+      document.getElementById(id).addEventListener('keydown', (e) => {
         if(e.key === 'Enter'){
           e.preventDefault();
           buildRoute();
         }
       });
     });
+
+    function tryAutoBuild(){
+      const a = document.getElementById('from').value.trim();
+      const b = document.getElementById('to').value.trim();
+      if(a && b) buildRoute();
+    }
 
     loadFrames();
   }
