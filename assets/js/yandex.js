@@ -6,10 +6,12 @@ import { YandexRouter } from './router.js';
 
 let map, multiRoute, viaPoints = [];
 let viaMarkers = [];
+let viaMode = false;
 let activeRouteChangeHandler = null;
 let framesToggleStateBeforeCar = null;
 let trafficControl = null;
 let isBuilding = false;
+let updateUI = () => {};
 
 function addToMap(obj) {
   if (obj && map && !isOnMap(obj)) {
@@ -132,6 +134,56 @@ function isCarMode() {
   return getCurrentVehMode() === 'car';
 }
 
+function handleViaMarkerClick(marker) {
+  const idx = viaMarkers.indexOf(marker);
+  if (idx === -1) return;
+
+  viaMarkers.splice(idx, 1);
+  viaPoints.splice(idx, 1);
+  removeFromMap(marker);
+  toast('Точка по пути удалена', 1200);
+  updateUI();
+  rebuildRouteIfReady();
+}
+
+function createViaMarker(coords) {
+  const mark = new ymaps.Placemark(
+    coords,
+    { hintContent: 'via ' + (viaPoints.length + 1) },
+    { preset: 'islands#darkGreenCircleDotIcon' }
+  );
+  mark.events.add('click', () => handleViaMarkerClick(mark));
+  return mark;
+}
+
+function addViaPoint(coords, { silent = false } = {}) {
+  if (viaPoints.length >= 5) {
+    if (!silent) toast('Максимум 5 точек по пути', 1500);
+    return false;
+  }
+
+  viaPoints.push(coords);
+  if (map) {
+    const mark = createViaMarker(coords);
+    addToMap(mark);
+    viaMarkers.push(mark);
+  }
+  if (!silent) toast(`Добавлена точка по пути (${viaPoints.length})`, 1200);
+  updateUI();
+  return true;
+}
+
+async function rebuildRouteIfReady() {
+  const fromVal = $('#from')?.value.trim();
+  const toVal = $('#to')?.value.trim();
+  if (!fromVal || !toVal) return;
+  try {
+    await buildRouteWithState();
+  } catch (e) {
+    toast(typeof e === 'string' ? e : (e.message || 'Ошибка построения маршрута'));
+  }
+}
+
 const LAYERS_BASE = window.TRANSTIME_CONFIG?.layersBase || (location.pathname.replace(/\/[^/]*$/, '') + '/data');
 function urlFromBase(name) {
   return `${LAYERS_BASE}/${name}`;
@@ -217,18 +269,7 @@ async function loadSavedRoute(index) {
   viaMarkers.forEach(removeFromMap);
   viaMarkers = [];
 
-  (r.viaPoints || []).forEach(coords => {
-    viaPoints.push(coords);
-    if (map) {
-      const mark = new ymaps.Placemark(
-        coords,
-        { hintContent: 'via' },
-        { preset: 'islands#darkGreenCircleDotIcon' }
-      );
-      addToMap(mark);
-      viaMarkers.push(mark);
-    }
-  });
+  (r.viaPoints || []).forEach(coords => addViaPoint(coords, { silent: true }));
 
   fromEl?.dispatchEvent(new Event('input'));
   toEl?.dispatchEvent(new Event('input'));
@@ -682,8 +723,9 @@ function setup() {
   const cTraffic   = $('#toggle-traffic');
   const cEvents    = $('#toggle-events');
   const cRoadsHgv  = $('#toggle-roads-hgv');
+  const viaModeBtn = $('#viaModeBtn');
 
-  function updateUI() {
+  updateUI = function updateUI() {
     const hasFrom = !!from?.value.trim();
     const hasTo   = !!to?.value.trim();
 
@@ -696,7 +738,7 @@ function setup() {
       clearVia.disabled = viaPoints.length === 0;
       clearVia.title = clearVia.disabled ? 'Нет промежуточных точек для сброса' : '';
     }
-  }
+  };
   function updateVehGroup() {
     vehRadios.forEach(r => r.parentElement.classList.toggle('active', r.checked));
   }
@@ -750,18 +792,23 @@ function setup() {
   if (cFed?.checked)       toggleLayer('federal', true, cFed);
   if (cRoadsHgv?.checked)  toggleLayer('roadsHgvUfo', true, cRoadsHgv);
 
-  map.events.add('click', (e) => {
-    const coords = e.get('coords');
-    viaPoints.push(coords);
-    const mark = new ymaps.Placemark(
-      coords,
-      { hintContent: 'via ' + viaPoints.length },
-      { preset: 'islands#darkGreenCircleDotIcon' }
+  viaModeBtn?.classList.toggle('active', viaMode);
+  viaModeBtn?.addEventListener('click', () => {
+    viaMode = !viaMode;
+    viaModeBtn.classList.toggle('active', viaMode);
+    toast(
+      viaMode
+        ? 'Режим точек по пути включен. Клик по карте добавит точку'
+        : 'Режим точек по пути выключен',
+      1800
     );
-    addToMap(mark);
-    viaMarkers.push(mark);
-    toast(`Добавлена via-точка (${viaPoints.length})`, 1200);
-    updateUI();
+  });
+
+  map.events.add('click', (e) => {
+    if (!viaMode) return;
+    const coords = e.get('coords');
+    const added = addViaPoint(coords);
+    if (added) rebuildRouteIfReady();
   });
 
   buildBtn?.addEventListener('click', onBuild);
@@ -769,8 +816,9 @@ function setup() {
     viaPoints = [];
     viaMarkers.forEach(removeFromMap);
     viaMarkers = [];
-    toast('Via-точки очищены', 1200);
+    toast('Точки по пути очищены', 1200);
     updateUI();
+    rebuildRouteIfReady();
   });
 
   updateUI();
@@ -778,15 +826,15 @@ function setup() {
   syncFramesLayerVisibility();
 }
 
-async function onBuild() {
-  try {
-    if (isBuilding) return;
-    isBuilding = true;
-    const buildBtn = document.getElementById('buildBtn');
-    buildBtn?.setAttribute('disabled','disabled');
+async function buildRouteWithState() {
+  if (isBuilding) return;
+  const buildBtn = document.getElementById('buildBtn');
+  buildBtn?.setAttribute('disabled','disabled');
+  isBuilding = true;
 
+  try {
     const checked = document.querySelector('input[name=veh]:checked');
-    const mode = (checked and checked.value) || 'truck40';
+    const mode = (checked && checked.value) || 'truck40';
     const opts = { mode: 'truck' };
     if (mode === 'car') opts.mode = 'auto';
     if (mode === 'truck40') opts.weight = 40000;
@@ -833,16 +881,24 @@ async function onBuild() {
     }
 
     toast('Маршрут успешно построен', 1800);
+    return mr;
+  } finally {
     buildBtn?.removeAttribute('disabled');
-    isBuilding = false;
-  } catch (e) {
-    toast(typeof e === 'string' ? e : (e.message || 'Ошибка построения маршрута'));
-    document.getElementById('buildBtn')?.removeAttribute('disabled');
     isBuilding = false;
   }
 }
 
+async function onBuild() {
+  try {
+    await buildRouteWithState();
+  } catch (e) {
+    toast(typeof e === 'string' ? e : (e.message || 'Ошибка построения маршрута'));
+  }
+}
+
 if (typeof window !== 'undefined') {
+  window.buildRouteWithState = buildRouteWithState;
+  window.onBuild = onBuild;
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => { try { init(); } catch (e) { console.error(e); } });
   } else {
