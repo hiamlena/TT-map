@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Trans-Time — Построение маршрута</title>
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#0f1115" />
+  <link rel="stylesheet" href="./assets/css/style.css" />
+  <script type="module" src="./errors.js"></script>
+  <style>
+    .tt-param-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .tt-param-row label {
+      flex: 1;
+      font-size: 14px;
+    }
+    .tt-param-row input {
+      margin-top: 4px;
+    }
+    .tt-input-sm {
+      height: 32px;
+      font-size: 14px;
+    }
+    .tt-btn[title] {
+      position: relative;
+    }
+    .tt-btn[title]:hover::after {
+      content: attr(title);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #000;
+      color: #fff;
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 4px;
+      white-space: nowrap;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    /* Скрытие расширенных параметров по умолчанию (если нужно) */
+    #advancedParams {
+      display: none;
+    }
+    #toggleAdvanced.toggled {
+      background: var(--tt-bg2);
+    }
+  </style>
+</head>
+<body>
+  <header class="tt-header">
+    <h1>Trans-Time: Построение маршрута</h1>
+  </header>
+
+  <main class="tt-layout">
+    <section class="tt-panel">
+      <!-- Тип транспорта -->
+      <div class="tt-field-group">
+        <label class="tt-label">Тип транспорта</label>
+        <div class="tt-veh">
+          <label class="tt-chip">
+            <input type="radio" name="veh" value="car" /> Легковой
+          </label>
+          <label class="tt-chip">
+            <input type="radio" name="veh" value="truck40" checked /> Грузовой ≤ 40 т
+          </label>
+          <label class="tt-chip">
+            <input type="radio" name="veh" value="truckHeavy" /> Грузовой > 40 т
+          </label>
+        </div>
+      </div>
+
+      <!-- Пункты A и B -->
+      <div class="tt-field">
+        <input
+          id="from"
+          class="tt-input"
+          placeholder="A Откуда (поиск по адресу)"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+      <div class="tt-field">
+        <input
+          id="to"
+          class="tt-input"
+          placeholder="B Куда (поиск по адресу)"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+
+      <!-- Кнопка "Расширенные параметры" -->
+      <div class="tt-actions">
+        <button id="toggleAdvanced" class="tt-btn" type="button">
+          Параметры ТС (по желанию) ▼
+        </button>
+      </div>
+
+      <!-- Параметры ТС — скрыты по умолчанию -->
+      <div id="advancedParams">
+        <div class="tt-truck-params">
+          <div class="tt-param-row">
+            <label>Вес, т
+              <input type="number" id="truckWeight" class="tt-input tt-input-sm" value="40" step="0.1" min="0" max="100"
+                     title="Максимальный разрешённый вес (в тоннах)">
+            </label>
+            <label>Высота, м
+              <input type="number" id="truckHeight" class="tt-input tt-input-sm" value="4.0" step="0.1" min="0" max="10"
+                     title="Высота транспортного средства">
+            </label>
+          </div>
+          <div class="tt-param-row">
+            <label>Ширина, м
+              <input type="number" id="truckWidth" class="tt-input tt-input-sm" value="2.55" step="0.01" min="0" max="5"
+                     title="Ширина транспортного средства">
+            </label>
+            <label>Длина, м
+              <input type="number" id="truckLength" class="tt-input tt-input-sm" value="16" step="0.1" min="0" max="30"
+                     title="Длина транспортного средства">
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Режим добавления точек -->
+      <div class="tt-actions">
+        <button
+          id="waypointModeBtn"
+          class="tt-btn"
+          title="Включить режим добавления точек по пути (до 5 шт)"
+          role="button">
+          ➕ Точки по пути
+        </button>
+      </div>
+
+      <!-- Кнопки действий -->
+      <div class="tt-actions">
+        <button
+          id="buildBtn"
+          class="tt-btn tt-btn-primary"
+          disabled
+          title="Построить маршрут (Enter или Ctrl+Enter)"
+          role="button">
+          Построить маршрут
+        </button>
+        <button
+          id="clearWaypoints"
+          class="tt-btn"
+          disabled
+          title="Очистить все точки по пути"
+          role="button">
+          Очистить точки
+        </button>
+      </div>
+
+      <!-- Слои -->
+      <details class="tt-details">
+        <summary>Слои карты</summary>
+        <div class="tt-layers">
+          <div class="tt-layer-group">
+            <h4 class="tt-layer-title">Трафик</h4>
+            <label class="tt-toggle">
+              <input type="checkbox" id="toggle-traffic" checked />
+              <span>Пробки</span>
+            </label>
+            <label class="tt-toggle">
+              <input type="checkbox" id="toggle-events" checked />
+              <span>Дорожные события</span>
+            </label>
+          </div>
+          <div class="tt-layer-group">
+            <h4 class="tt-layer-title">Грузовое движение</h4>
+            <label class="tt-toggle">
+              <input type="checkbox" id="toggle-frames" />
+              <span>Весовые рамки</span>
+            </label>
+            <label class="tt-toggle">
+              <input type="checkbox" id="toggle-truck-allowed" checked />
+              <span>Разрешено для грузовиков</span>
+            </label>
+            <label class="tt-toggle">
+              <input type="checkbox" id="toggle-truck-conditional" />
+              <span>Ограничения для грузовиков</span>
+            </label>
+            <label class="tt-toggle">
+              <input type="checkbox" id="toggle-truck-forbidden" />
+              <span>Запрещено для грузовиков</span>
+            </label>
+            <label class="tt-toggle">
+              <input type="checkbox" id="toggle-federal" />
+              <span>Федеральные трассы</span>
+            </label>
+            <label class="tt-toggle">
+              <input type="checkbox" id="toggle-clearance" />
+              <span>Ограничения (высота/ширина)</span>
+            </label>
+          </div>
+        </div>
+      </details>
+
+      <!-- Подсказка -->
+      <p class="tt-note">Нажмите на карте, чтобы добавить точку по пути (включите режим «Точки по пути»).</p>
+
+      <!-- Сохранение маршрутов -->
+      <div class="tt-saved-actions">
+        <button id="saveRouteBtn" class="tt-btn" title="Сохранить маршрут в избранное" role="button">Сохранить</button>
+        <button id="shareRouteBtn" class="tt-btn" title="Скопировать ссылку для водителя" role="button">Ссылка</button>
+        <button id="openNavBtn" class="tt-btn" title="Открыть в Яндекс.Навигаторе" role="button">Навигатор</button>
+      </div>
+
+      <!-- Список избранных маршрутов -->
+      <h4 class="tt-saved-title">Избранные маршруты</h4>
+      <ul id="savedRoutesList" class="tt-saved-routes"></ul>
+    </section>
+
+    <!-- Карта -->
+    <section class="tt-map-wrap">
+      <div id="map" class="tt-map" loading="lazy"></div>
+      <div id="routeList" class="tt-route-list" style="display: none;"></div>
+      <div class="tt-legend">
+        <span class="tt-legend-item legend-active"></span><span class="tt-legend-label">Активный</span>
+        <span class="tt-legend-item legend-alt"></span><span class="tt-legend-label">Альтернативный</span>
+        <span class="tt-legend-item legend-frames"></span><span class="tt-legend-label">Весовые рамки</span>
+      </div>
+    </section>
+  </main>
+
+  <!-- Скрипты -->
+  <script src="./config.php"></script>
+  <script type="module" src="./assets/js/yandex.js"></script>
+  <script type="module" src="./assets/js/boot.js"></script>
+
+  <!-- Встроенный JS: переключение параметров ТС -->
+  <script>
+    // Расширенные параметры
+    const toggleAdvanced = document.getElementById('toggleAdvanced');
+    const advancedParams = document.getElementById('advancedParams');
+    const isAdvancedOpen = localStorage.getItem('TT_ADVANCED_OPEN') === 'true';
+
+    // Устанавливаем состояние
+    advancedParams.style.display = isAdvancedOpen ? 'block' : 'none';
+    toggleAdvanced.textContent = isAdvancedOpen
+      ? 'Параметры ТС (по желанию) ▲'
+      : 'Параметры ТС (по желанию) ▼';
+
+    toggleAdvanced.addEventListener('click', () => {
+      const isOpen = advancedParams.style.display === 'block';
+      advancedParams.style.display = isOpen ? 'none' : 'block';
+      toggleAdvanced.textContent = isOpen
+        ? 'Параметры ТС (по желанию) ▼'
+        : 'Параметры ТС (по желанию) ▲';
+      localStorage.setItem('TT_ADVANCED_OPEN', !isOpen);
+    });
+  </script>
+</body>
+</html>

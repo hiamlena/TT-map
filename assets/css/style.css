@@ -1,0 +1,188 @@
+:root {
+  --bg: #0b0e13;
+  --panel: #11161f;
+  --text: #e9eef7;
+  --muted: #9fb0c6;
+  --primary: #2f6bff;
+  --primary-ghost: rgba(47, 107, 255, .18);
+  --border: #1f2a3a;
+  --chip: #182133;
+  --ok: #1db954;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: var(--text);
+  background: radial-gradient(1200px 800px at 20% -10%, #14213b 0%, #0b0e13 55%) fixed;
+}
+
+.tt-header { padding: 16px 24px; border-bottom: 1px solid var(--border); }
+.tt-header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+
+.tt-layout { display: grid; grid-template-columns: 360px 1fr; gap: 16px; padding: 16px; }
+@media (max-width: 980px) { .tt-layout { grid-template-columns: 1fr; } }
+
+.tt-panel {
+  background: linear-gradient(180deg, #0e1421 0%, #0b0f1a 100%);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.35);
+}
+
+.tt-field { margin: 10px 0; }
+.tt-field-group { margin-bottom: 12px; }
+.tt-label { display:block; margin-bottom: 6px; color: var(--muted); font-size: 13px; }
+
+.tt-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #0f1626;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+}
+.tt-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-ghost); }
+
+.tt-veh { display: flex; gap: 8px; flex-wrap: wrap; }
+.tt-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--chip); border: 1px solid var(--border);
+  border-radius: 999px; padding: 6px 10px; cursor: pointer; user-select: none;
+}
+.tt-chip input { accent-color: var(--primary); }
+.tt-chip.active { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-ghost); }
+
+.tt-actions { display: flex; gap: 8px; margin: 12px 0; }
+.tt-btn {
+  background: #0f1626; color: var(--text); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 12px; cursor: pointer;
+}
+.tt-btn:hover { border-color: #2a3953; }
+.tt-btn:disabled { opacity: .55; cursor: not-allowed; }
+.tt-btn-primary { background: var(--primary); border-color: var(--primary); }
+.tt-btn-primary:hover { filter: brightness(1.05); }
+.highlight { box-shadow: 0 0 0 3px var(--primary-ghost); }
+
+.tt-details { margin: 10px 0; }
+.tt-layers { display: grid; gap: 6px; margin-top: 8px; }
+.tt-toggle { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); }
+.tt-note { color: var(--muted); margin-top: 8px; }
+
+.tt-map-wrap {
+  background: #0a0e16;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 6px;
+  min-height: 60vh;
+  box-shadow: 0 8px 28px rgba(0,0,0,.35);
+}
+
+.tt-map { width: 100%; height: calc(100vh - 160px); border-radius: 10px; overflow: hidden; }
+@media (max-width: 980px) { .tt-map { height: 60vh; } }
+
+/* === Дополнительные элементы Trans-Time === */
+
+/* Легенда маршрутов и слоёв */
+.tt-legend {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 8px;
+  background: linear-gradient(180deg, #0e1421 0%, #0b0f1a 100%);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  z-index: 300;
+}
+.tt-legend-item {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+}
+.legend-active { background: var(--ok); }
+.legend-alt { background: #fbbf24; }
+.legend-frames { background: #3b82f6; }
+.tt-legend-label { margin-right: 8px; }
+
+/* Список альтернативных маршрутов */
+.tt-route-list {
+  position: absolute;
+  top: 40px;
+  right: 8px;
+  max-width: 240px;
+  max-height: 45vh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #0e1421 0%, #0b0f1a 100%);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.35);
+  z-index: 300;
+  font-size: 13px;
+}
+.tt-route-item {
+  padding: 8px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tt-route-item:last-child { border-bottom: none; }
+.tt-route-item.active {
+  background: rgba(47, 107, 255, 0.15);
+  border-left: 3px solid var(--primary);
+}
+
+/* Действия сохранения и обмена */
+.tt-saved-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Список сохранённых маршрутов */
+.tt-saved-routes {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 25vh;
+  overflow-y: auto;
+}
+.tt-saved-routes li {
+  background: #0f1626;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+.tt-saved-routes .tt-saved-meta {
+  flex-grow: 1;
+  margin-right: 8px;
+}
+.tt-saved-routes button {
+  background: var(--primary);
+  border: none;
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+.tt-saved-routes button.delete {
+  background: #ef4444;
+}
