@@ -1,0 +1,9 @@
+{
+  "type": "FeatureCollection",
+  "features": [],
+  "metadata": {
+    "title": "Габаритные ограничения",
+    "source": "placeholder",
+    "note": "Файл-заглушка: укажите высоту/ширину в свойствах features"
+  }
+}
