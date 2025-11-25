@@ -1,0 +1,9 @@
+{
+  "type": "FeatureCollection",
+  "features": [],
+  "metadata": {
+    "title": "Запрещено для грузовиков",
+    "source": "placeholder",
+    "note": "Файл-заглушка: добавьте актуальные данные в формате GeoJSON"
+  }
+}

@@ -11,6 +11,7 @@ let activeRouteChangeHandler = null;
 let framesToggleStateBeforeCar = null;
 let trafficControl = null;
 let isBuilding = false;
+let apiWatchdog = null;
 
 // === Утилиты ===
 function addToMap(obj) {
@@ -405,6 +406,11 @@ export function init() {
   if (window.__TT_YA_LOADING__) return;
   window.__TT_YA_LOADING__ = true;
 
+  if (apiWatchdog) {
+    clearTimeout(apiWatchdog);
+    apiWatchdog = null;
+  }
+
   const script = document.createElement('script');
   script.src =
     'https://api-maps.yandex.ru/2.1/?apikey=' + encodeURIComponent(cfg.apiKey) +
@@ -412,15 +418,33 @@ export function init() {
     '&csp=true&coordorder=longlat' +
     '&load=package.full';
   script.defer = true;
+  script.crossOrigin = 'anonymous';
   script.onload = () => {
+    if (apiWatchdog) {
+      clearTimeout(apiWatchdog);
+      apiWatchdog = null;
+    }
     if (window.ymaps && typeof ymaps.ready === 'function') {
       ymaps.ready(setup);
     } else {
-      toast('Yandex Maps API не загружен');
+      window.__TT_YA_LOADING__ = false;
+      toast('Yandex Maps API не загружен (проверьте CSP и ошибки bundling)');
+      console.error('Yandex Maps API script loaded but ymaps is missing. Возможно, CSP блокирует выполнение или SDK вернул ошибку "Failed to bundle \"full\"".');
     }
   };
-  script.onerror = () => toast('Не удалось загрузить Yandex Maps');
+  script.onerror = (evt) => {
+    window.__TT_YA_LOADING__ = false;
+    toast('Не удалось загрузить Yandex Maps (проверьте Referer, API-ключ и директивы CSP для api-maps.yandex.ru)');
+    console.error('Yandex Maps API load error:', evt);
+  };
   document.head.appendChild(script);
+
+  apiWatchdog = setTimeout(() => {
+    if (!window.ymaps || typeof window.ymaps.ready !== 'function') {
+      window.__TT_YA_LOADING__ = false;
+      toast('Yandex Maps API не ответил. Проверьте корректность ключа, Referer и директивы script-src / script-src-elem.');
+    }
+  }, 9000);
 }
 
 async function toggleLayer(name, on, checkbox) {
